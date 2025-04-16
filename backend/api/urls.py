@@ -1,5 +1,6 @@
 from django.urls import path
+from . import views
 
 urlpatterns = [
-    # path('inscan')
+    path('login/', views.Login.as_view())
 ]
