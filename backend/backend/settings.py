@@ -24,12 +24,13 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-)*^2#d7dy9w51q_f7=#s45a$x_#&sk0%9k%xj7!^%^n()g+l=s'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", default=False)
 
-ALLOWED_HOSTS = ['127.0.0.1', 'fdc-api.dharmatejan.in']
+
+ALLOWED_HOSTS = [os.environ.get('ALLOWED_HOSTS')]
 
 # Application definition
 
@@ -56,8 +57,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'api.middleware.CustomMiddleware'
 ]
-CORS_ALLOWED_ORIGINS = ['fdc.dharmatejan.in', 'http://localhost:5173']
-CSRF_TRUSTED_ORIGINS = ['fdc.dharmatejan.in', 'http://localhost:5173']
+print(os.environ.get('CORS_ALLOWED_ORIGINS'))
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS',"").split(",")
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS',"").split(",")
 CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'backend.urls'
@@ -84,12 +86,12 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'FDC',
-        'USER': 'fdc_admin',
-        'PASSWORD': 'AVNS_QwwafU3ydiususIFM24',
-        'HOST': 'mysql-17e4e0d2-fdc-db.k.aivencloud.com',  # Or your DB host
-        'PORT': '18353',  # Default MySQL port
+        'ENGINE': os.environ.get('DATABASE_ENGINE'),
+        'NAME': os.environ.get('DATABASE_NAME'),
+        'USER': os.environ.get('DATABASE_USER'),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
+        'HOST': os.environ.get('DATABASE_HOST'),  # Or your DB host
+        'PORT': os.environ.get('DATABASE_PORT'),  # Default MySQL port
     }
 }
 
