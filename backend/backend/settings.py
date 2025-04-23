@@ -24,12 +24,13 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env.get_value('DJANGO_SECRET_KEY')
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.get_value("DEBUG", default=False)
+DEBUG = os.environ.get("DEBUG", default=False)
 
-ALLOWED_HOSTS = [env.get_value('ALLOWED_HOSTS')]
+
+ALLOWED_HOSTS = [os.environ.get('ALLOWED_HOSTS')]
 
 # Application definition
 
@@ -56,14 +57,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'api.middleware.CustomMiddleware'
 ]
-
-CORS_ALLOWED_ORIGINS = [
-    env.get_value('CORS_ALLOWED_ORIGINS')
-]
-CSRF_TRUSTED_ORIGINS = [
-    env.get_value('CSRF_TRUSTED_ORIGINS')
-]
-CORS_ALLOW_CREDENTIALS = env.get_value("CORS_ALLOW_CREDENTIALS", default=False)
+print(os.environ.get('CORS_ALLOWED_ORIGINS'))
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS',"").split(",")
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS',"").split(",")
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -89,12 +86,12 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': env.get_value('DATABASE_ENGINE'),
-        'NAME': env.get_value('DATABASE_NAME'),
-        'USER': env.get_value('DATABASE_USER'),
-        'PASSWORD': env.get_value('DATABASE_PASSWORD'),
-        'HOST': env.get_value('DATABASE_HOST'),  # Or your DB host
-        'PORT': env.get_value('DATABASE_PORT'),  # Default MySQL port
+        'ENGINE': os.environ.get('DATABASE_ENGINE'),
+        'NAME': os.environ.get('DATABASE_NAME'),
+        'USER': os.environ.get('DATABASE_USER'),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
+        'HOST': os.environ.get('DATABASE_HOST'),  # Or your DB host
+        'PORT': os.environ.get('DATABASE_PORT'),  # Default MySQL port
     }
 }
 
