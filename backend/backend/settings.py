@@ -58,8 +58,8 @@ MIDDLEWARE = [
     'api.middleware.CustomMiddleware'
 ]
 
-CORS_ALLOWED_ORIGINS = 'https://fdc.dharmatejan.in'
-CSRF_TRUSTED_ORIGINS = 'https://fdc.dharmatejan.in'
+CORS_ALLOWED_ORIGINS = ['https://fdc.dharmatejan.in']
+CSRF_TRUSTED_ORIGINS = ['https://fdc.dharmatejan.in']
 CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'backend.urls'
