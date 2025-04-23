@@ -62,6 +62,13 @@ CORS_ALLOWED_ORIGINS = ['https://fdc.dharmatejan.in']
 CSRF_TRUSTED_ORIGINS = ['https://fdc.dharmatejan.in']
 CORS_ALLOW_CREDENTIALS = True
 
+CSRF_COOKIE_NAME = "csrftoken"
+CSRF_COOKIE_HTTPONLY = False  # So JavaScript can read it if needed
+CSRF_COOKIE_SECURE = True  # Important for HTTPS
+CSRF_COOKIE_SAMESITE = "None"
+
+
+
 ROOT_URLCONF = 'backend.urls'
 
 TEMPLATES = [
