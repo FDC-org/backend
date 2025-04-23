@@ -9,22 +9,27 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
+import environ
+
+env = environ.Env()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-)*^2#d7dy9w51q_f7=#s45a$x_#&sk0%9k%xj7!^%^n()g+l=s'
+SECRET_KEY = env.get_value('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.get_value("DEBUG", default=False)
 
-ALLOWED_HOSTS = ['backend-9py7.onrender.com', '127.0.0.1','*']
+ALLOWED_HOSTS = [env.get_value('ALLOWED_HOSTS')]
 
 # Application definition
 
@@ -36,19 +41,29 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'api',
-    'rest_framework'
+    'rest_framework',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'api.middleware.CustomMiddleware',
+    'api.middleware.CustomMiddleware'
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    env.get_value('CORS_ALLOWED_ORIGINS')
+]
+CSRF_TRUSTED_ORIGINS = [
+    env.get_value('CSRF_TRUSTED_ORIGINS')
+]
+CORS_ALLOW_CREDENTIALS = env.get_value("CORS_ALLOW_CREDENTIALS", default=False)
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -74,12 +89,12 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'FDC',
-        'USER': 'fdc_admin',
-        'PASSWORD': 'AVNS_QwwafU3ydiususIFM24',
-        'HOST': 'mysql-17e4e0d2-fdc-db.k.aivencloud.com',  # Or your DB host
-        'PORT': '18353',  # Default MySQL port
+        'ENGINE': env.get_value('DATABASE_ENGINE'),
+        'NAME': env.get_value('DATABASE_NAME'),
+        'USER': env.get_value('DATABASE_USER'),
+        'PASSWORD': env.get_value('DATABASE_PASSWORD'),
+        'HOST': env.get_value('DATABASE_HOST'),  # Or your DB host
+        'PORT': env.get_value('DATABASE_PORT'),  # Default MySQL port
     }
 }
 
@@ -106,11 +121,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
