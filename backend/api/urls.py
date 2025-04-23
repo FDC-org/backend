@@ -1,6 +1,21 @@
 from django.urls import path
-from . import views
+from .views import views
+from .views import user
+from .views import basic_api_views
+from .views import inscan
 
 urlpatterns = [
-    path('login/', views.Login.as_view())
+    # user api
+    path('login/', user.Login.as_view()),
+    path('d/', views.Dashboard.as_view()),
+    path('csrf/', user.csrf_token),
+
+    # basic api
+    path('userdetails/', basic_api_views.UseDetails.as_view()),
+    path('bookingdetails/', basic_api_views.GetBookingDetails.as_view()),
+    path('addbookingdetails/', basic_api_views.AddBookingDetails.as_view()),
+
+    # inscan
+    path('inscan/', inscan.Inscan.as_view()),
+    path('inscan/<slug:date>', inscan.Inscan.as_view())
 ]

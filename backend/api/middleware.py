@@ -1,4 +1,8 @@
+import json
+from datetime import timedelta
+
 from django.http import JsonResponse
+from django.utils import timezone
 from rest_framework.response import Response
 
 from . import models
@@ -13,22 +17,25 @@ class CustomMiddleware:
         auth_header = request.headers.get('Authorization')
 
         if request.path.startswith('/admin/') or request.path.startswith('/api/login/'):
-            return None
+            return self.get_response(request)
 
         if not auth_header or not auth_header.startswith("Token "):
             return JsonResponse({'error': 'token needed'}, status=401)
 
-        if auth_header and auth_header.startswith('Token '):
-            token = auth_header.split(' ')[1]
+        token = auth_header.split(' ')[1]
 
-            try:
-                token = models.CustomTokenModel.objects.get(token=token)
-                if token.is_expired():
-                    token.delete()
-                    return JsonResponse({'error': "token expired"}, status=401)
-                request.user = token.user
+        try:
+            token = models.CustomTokenModel.objects.get(token=token)
+            if token.is_expired():
+                token.delete()
+                return JsonResponse({'error': "token expired"}, status=401)
+            request.user = token.user
 
-            except models.CustomTokenModel.DoesNotExist:
-                return JsonResponse({'error': "invalid token"}, status=401)
+            if token.expired_at - timezone.now() < timedelta(minutes=10):
+                token.delete()
+                request.new_token = models.CustomTokenModel.objects.create(user=token.user).token
 
-        return self.get_response
+        except models.CustomTokenModel.DoesNotExist:
+            return JsonResponse({'error': "invalid token"})
+
+        return self.get_response(request)
