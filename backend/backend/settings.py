@@ -62,10 +62,15 @@ CORS_ALLOWED_ORIGINS = ['https://fdc.dharmatejan.in','https://meek-pegasus-904cb
 CSRF_TRUSTED_ORIGINS = ['https://fdc.dharmatejan.in','https://meek-pegasus-904cb8.netlify.app']
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_COOKIE_NAME = "csrftoken"
+CORS_ORIGIN_WHITELIST = [
+    'https://fdc.dharmatejan.in',
+    'http://localhost:3000'  # Keep for local testing
+]
+
+CSRF_COOKIE_NAME = "csrf_token"
 CSRF_COOKIE_HTTPONLY = False  # So JavaScript can read it if needed
 CSRF_COOKIE_SECURE = True  # Important for HTTPS
-CSRF_COOKIE_SAMESITE = False
+CSRF_COOKIE_SAMESITE = 'None'
 
 
 
