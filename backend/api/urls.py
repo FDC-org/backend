@@ -17,5 +17,7 @@ urlpatterns = [
 
     # inscan
     path('inscan/', inscan.Inscan.as_view()),
-    path('inscan/<slug:date>', inscan.Inscan.as_view())
+    path('inscan/<slug:date>', inscan.Inscan.as_view()),
+    
+    path('test/',user.test)
 ]
