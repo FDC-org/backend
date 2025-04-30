@@ -47,32 +47,35 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    'api.middleware.CustomMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'api.middleware.CustomMiddleware'
 ]
 
-CORS_ALLOWED_ORIGINS = ['https://fdc.dharmatejan.in','https://meek-pegasus-904cb8.netlify.app']
-CSRF_TRUSTED_ORIGINS = ['https://fdc.dharmatejan.in','https://meek-pegasus-904cb8.netlify.app']
+
+CORS_ALLOWED_ORIGINS = ['https://fdc.dharmatejan.in','http://localhost:5173',"http://127.0.0.1:5173"]
+CSRF_TRUSTED_ORIGINS = ['https://fdc.dharmatejan.in','http://localhost:5173']
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ORIGIN_WHITELIST = [
     'https://fdc.dharmatejan.in',
-    'http://localhost:3000'  # Keep for local testing
+    'http://localhost:5173'  # Keep for local testing
 ]
 
-CSRF_COOKIE_NAME = "csrf_token"
 CSRF_COOKIE_HTTPONLY = False  # So JavaScript can read it if needed
-CSRF_COOKIE_SECURE = True  # Important for HTTPS
-CSRF_COOKIE_SAMESITE = 'None'
-
-
+CSRF_COOKIE_DOMAIN = "localhost"
+SESSION_COOKIE_DOMAIN = "localhost"
+CSRF_COOKIE_SAMESITE = None  # Force None
+SESSION_COOKIE_SAMESITE = None
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = False
 
 ROOT_URLCONF = 'backend.urls'
 
