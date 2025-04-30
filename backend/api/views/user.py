@@ -1,10 +1,12 @@
 from django.contrib.auth import authenticate
 from django.http import JsonResponse
+from django.middleware.csrf import get_token
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from ..models import CustomTokenModel
 from django.views.decorators.csrf import ensure_csrf_cookie
+
 
 
 class Login(APIView):
@@ -17,7 +19,7 @@ class Login(APIView):
         user = authenticate(username=username, password=password)
         if user:
             token, _ = CustomTokenModel.objects.get_or_create(user=user)
-            return Response({'token': token.token}, status=status.HTTP_202_ACCEPTED)
+            return Response({'token': token.token,}, status=status.HTTP_202_ACCEPTED)
 
         else:
             return Response({'error': 'invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -26,3 +28,7 @@ class Login(APIView):
 @ensure_csrf_cookie
 def csrf_token(r):
     return JsonResponse({'status': "csrf set"})
+
+
+def test(r):
+    return Response({"value",r})
