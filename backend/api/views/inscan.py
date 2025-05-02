@@ -26,7 +26,6 @@ class Inscan(APIView):
         try:
             for i in awb_no:
                 dt_naive = datetime.datetime.strptime(i[0], "%d-%m-%Y, %H:%M:%S")
-                # dt_aware = make_aware(dt_naive)
                 InscanModel.objects.create(awbno=i[1], inscaned_branch_code=branch_code.code,date=dt_naive)
             return Response({"status": "success"}, status=status.HTTP_201_CREATED)
         except Exception as e:

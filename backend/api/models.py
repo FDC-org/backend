@@ -27,9 +27,14 @@ class UserDetails(models.Model):
     lastname = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=10)
     code_name = models.CharField(max_length=30)
+    manifestnumber = models.CharField(max_length=20)
 
     def fullname(self):
         return str(self.firstname) + " " + str(self.lastname)
+
+    def set_manifest_number(self):
+        return "250" + str(self.code) + "010001"
+
 
 
 class HubDetails(models.Model):
@@ -75,8 +80,26 @@ class InscanModel(models.Model):
     inscaned_branch_code = models.CharField(max_length=10)
 
 
+class Vehicle_Details(models.Model):
+    hub_code = models.CharField(max_length=20)
+    vehiclenumber = models.CharField(max_length=10, unique=True)
+
+
+class ManifestDetails(models.Model):
+    date = models.DateTimeField()
+    inscaned_branch_code = models.CharField(max_length=10)
+    tohub_branch_code = models.CharField(max_length=10)
+    manifestnumber = models.CharField(max_length=30, unique=True)
+    vehicle_number = models.ForeignKey(Vehicle_Details, on_delete=models.CASCADE)
+
+
+class OutscanModel(models.Model):
+    awbno = models.CharField(max_length=10)
+    manifestnumber = models.ForeignKey(ManifestDetails, on_delete=models.CASCADE)
+
+
 class BookingDetails_temp(models.Model):
     awbno = models.CharField(max_length=10)
     doc_type = models.CharField(max_length=10)
     pcs = models.IntegerField()
-    wt = models.DecimalField(decimal_places=2,max_digits=5)
+    wt = models.DecimalField(decimal_places=2, max_digits=5)
