@@ -20,7 +20,7 @@ class CustomMiddleware:
         if request.method == "OPTIONS":
             return self.get_response(request)
 
-        if request.path.startswith('/admin/') or request.path.startswith('/api/login/'):
+        if request.path.startswith('/api/track/') or request.path.startswith('/api/login/'):
             return self.get_response(request)
 
         if not auth_header or not auth_header.startswith("Token "):
