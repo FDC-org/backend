@@ -56,8 +56,8 @@ class ManifestData(APIView):
         data = []
         manifest_details = ManifestDetails.objects.get(manifestnumber=manifest_number)
         for i in OutscanModel.objects.filter(manifestnumber=ManifestDetails.objects.get(manifestnumber=manifest_number)):
-            awbdetails = BookingDetails_temp.objects.get(awbno=i.awbno)
-            data.append({"awbno": i.awbno,"pcs":awbdetails.pcs,"wt":awbdetails.wt})
+            awbdetails = BookingDetails_temp.objects.filter(awbno=i.awbno)
+            data.append({"awbno": i.awbno,"pcs":awbdetails[0].pcs,"wt":awbdetails[0].wt})
         return Response({"status": "success", "date": manifest_details.date,
                          "tohub": UserDetails.objects.get(code=manifest_details.tohub_branch_code).code_name,
                          "vehicle_number": manifest_details.vehicle_number.vehiclenumber,"awbno":data})
