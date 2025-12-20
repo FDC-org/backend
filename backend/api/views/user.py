@@ -31,4 +31,4 @@ def csrf_token(r):
 
 
 def test(r):
-    return Response({"value",r})
+    return JsonResponse({'status': "test"})
