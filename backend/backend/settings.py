@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-)*^2#d7dy9w51q_f7=#s45a$x_#&sk0%9k%xj7!^%^n()g+l=s
 DEBUG = True
 
 
-ALLOWED_HOSTS = ['fdc-api.dharmatejan.in','127.0.0.1','backend-9py7.onrender.com']
+ALLOWED_HOSTS = ['fdc-api.dharmatejan.in','127.0.0.1','backend-9py7.onrender.com','*']
 
 # Application definition
 
@@ -59,14 +59,15 @@ MIDDLEWARE = [
 ]
 
 
-CORS_ALLOWED_ORIGINS = ['https://fdc.dharmatejan.in','http://localhost:5173',"http://127.0.0.1:5173"]
-CSRF_TRUSTED_ORIGINS = ['https://fdc.dharmatejan.in','http://localhost:5173']
+CORS_ALLOWED_ORIGINS = ['https://fdc.dharmatejan.in','http://localhost:5173',"http://127.0.0.1:5173",'http://10.0.2.2:8000']
+CSRF_TRUSTED_ORIGINS = ['https://fdc.dharmatejan.in','http://localhost:5173','http://10.0.2.2:8000']
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ORIGIN_WHITELIST = [
     'https://fdc.dharmatejan.in',
-    'http://localhost:5173'  # Keep for local testing
+    'http://localhost:5173' ,
+    'http://10.0.2.2:8000' # Keep for local testing
 ]
 
 CSRF_COOKIE_HTTPONLY = False  # So JavaScript can read it if needed
