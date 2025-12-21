@@ -103,9 +103,9 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'defaultdb',
-        'USER': 'avnadmin',
-        'PASSWORD': 'AVNS_ru2wAo_MxW5KMMbfzOe',
+        'NAME': 'fdc_db',
+        'USER': 'fdcdb-admin',
+        'PASSWORD': 'AVNS_MV3pR-z3TMh-imOFjVr',
         'HOST': 'fdcdb-ndteja2000-4b9a.c.aivencloud.com',  # Or your DB host
         'PORT': 11866,  # Default MySQL port
     }
