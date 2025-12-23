@@ -115,5 +115,5 @@ class Track(APIView):
                                  'status': "success"})
             return Response({'tracking_data': tracking_data, 'booking': 'none', 'status': "success"})
         except Exception as e:
-            print(r)
+            print(e)
             return Response({'status': 'error'})
