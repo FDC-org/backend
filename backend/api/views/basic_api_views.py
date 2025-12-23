@@ -104,7 +104,7 @@ class Track(APIView):
                         'event': 'Outscan',
                         'location': UserDetails.objects.get(code=manifest.inscaned_branch_code).code_name,
                         'date': manifest.date,
-                        'branch_type': UserDetails.objects.get(code=inscan.inscaned_branch_code).type,
+                        'branch_type': UserDetails.objects.get(code=manifest.inscaned_branch_code).type,
                         'tohub':UserDetails.objects.get(code=manifest.tohub_branch_code).code_name
                     })
 
