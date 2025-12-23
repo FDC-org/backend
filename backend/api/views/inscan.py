@@ -31,3 +31,38 @@ class Inscan(APIView):
         except Exception as e:
             print(e)
             return Response({"status": "error"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+import datetime
+
+from django.utils.timezone import make_aware
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from ..models import UserDetails, InscanModel, BookingDetails_temp
+
+
+class InscanMobile(APIView):
+    def get(self, r, date):
+        if not date:
+            return Response({'error': 'not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        inscandata = InscanModel.objects.filter(inscaned_branch_code=UserDetails.objects.get(user=r.user).code,
+                                                date__date=date)
+        data = []
+        for i in inscandata:
+            bookingdata = BookingDetails_temp.objects.get(awbno=i.awbno)
+            data.append({"awbno": i.awbno, "date": i.date, "type": bookingdata.doc_type, "pcs": bookingdata.pcs,
+                         "wt": bookingdata.wt})
+        return Response({"status": "success", "data": data})
+
+    def post(self, r):
+        awb_no = r.data['awbno']
+        branch_code = UserDetails.objects.get(user=r.user)
+        date = r.data['date']
+        dt_naive = datetime.datetime.strptime(date, "%d-%m-%Y, %H:%M:%S")
+        try:
+            for i in awb_no:
+                InscanModel.objects.create(awbno=i, inscaned_branch_code=branch_code.code,date=dt_naive)
+            return Response({"status": "success"}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print(e)
+            return Response({"status": "error"}, status=status.HTTP_406_NOT_ACCEPTABLE)
