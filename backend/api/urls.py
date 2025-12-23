@@ -22,6 +22,7 @@ urlpatterns = [
 
     # inscan
     path('inscan/', inscan.Inscan.as_view()),
+    path('inscanmobile/', inscan.InscanMobile.as_view()),
     path('inscan/<slug:date>', inscan.Inscan.as_view()),
 
     # outscan
