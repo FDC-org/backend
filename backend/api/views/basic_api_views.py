@@ -86,25 +86,27 @@ class Track(APIView):
         try:
             tracking_data = []
             inscans = InscanModel.objects.filter(awbno=awbno)
-            for inscan in inscans:
-                tracking_data.append({
-                    'awbno': inscan.awbno,
-                    'event': 'Inscan',
-                    'location': UserDetails.objects.get(code=inscan.inscaned_branch_code).code_name,
-                    'date': inscan.date,
-                    'branch_type':UserDetails.objects.get(code=inscan.inscaned_branch_code).type
-                })
+            if inscans:
+                for inscan in inscans:
+                    tracking_data.append({
+                        'awbno': inscan.awbno,
+                        'event': 'Inscan',
+                        'location': UserDetails.objects.get(code=inscan.inscaned_branch_code).code_name,
+                        'date': inscan.date,
+                        'branch_type':UserDetails.objects.get(code=inscan.inscaned_branch_code).type
+                    })
             outscans = OutscanModel.objects.filter(awbno=awbno).select_related('manifestnumber__vehicle_number')
-            for outscan in outscans:
-                manifest = outscan.manifestnumber
-                tracking_data.append({
-                    'awbno': outscan.awbno,
-                    'event': 'Outscan',
-                    'location': UserDetails.objects.get(code=manifest.inscaned_branch_code).code_name,
-                    'date': manifest.date,
-                    'branch_type': UserDetails.objects.get(code=inscan.inscaned_branch_code).type,
-                    'tohub':UserDetails.objects.get(code=manifest.tohub_branch_code).code_name
-                })
+            if outscans:
+                for outscan in outscans:
+                    manifest = outscan.manifestnumber
+                    tracking_data.append({
+                        'awbno': outscan.awbno,
+                        'event': 'Outscan',
+                        'location': UserDetails.objects.get(code=manifest.inscaned_branch_code).code_name,
+                        'date': manifest.date,
+                        'branch_type': UserDetails.objects.get(code=inscan.inscaned_branch_code).type,
+                        'tohub':UserDetails.objects.get(code=manifest.tohub_branch_code).code_name
+                    })
 
             tracking_data.sort(key=lambda x: x['date'])
 
