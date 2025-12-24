@@ -28,12 +28,16 @@ class UserDetails(models.Model):
     phone_number = models.CharField(max_length=10)
     code_name = models.CharField(max_length=30)
     manifestnumber = models.CharField(max_length=20)
+    drs_number = models.CharField(max_length=20)
 
     def fullname(self):
         return str(self.firstname) + " " + str(self.lastname)
 
     def set_manifest_number(self):
         return "250" + str(self.code) + "010001"
+
+    def set_delivery_number(self):
+        return "250" + str(self.code) + "020001"
 
 
 
@@ -63,6 +67,25 @@ class DeliveryBoyDetalis(models.Model):
     phone_number = models.CharField(max_length=10)
     branch = models.OneToOneField(BranchDetails, on_delete=models.CASCADE, related_name='LinkedBranch_del')
 
+class DRS(models.Model):
+    drsno = models.CharField(max_length=20, primary_key=True)
+    boycode = models.OneToOneField(DeliveryBoyDetalis, on_delete=models.CASCADE, related_name='LinkedBoy_del')
+    branch = models.ForeignKey(BranchDetails, on_delete=models.CASCADE, related_name='LinkedBranch_del')
+    date= models.DateTimeField()
+    location = models.CharField(max_length=20)
+
+
+class DrsDetails(models.Model):
+    drsno = models.OneToOneField(DRS,on_delete=models.CASCADE, related_name='LinkedDelivery_number')
+    awbno = models.CharField(max_length=10)
+    status = models.BooleanField(default=False) # status if true either delivered or undeliverd or rto
+
+class DeliveryDetails(models.Model):
+    awbno = models.CharField(max_length=10)
+    status = models.CharField(max_length=20) #m delivered, undelivered, rto
+    recievername = models.CharField(max_length=20,default='')
+    image = models.ImageField(upload_to='delivery/', null=True, blank=True)
+    reason = models.TextField(default="") # it is reason for undelivered
 
 class Pincodes(models.Model):
     branch_code = models.OneToOneField(BranchDetails, related_name='LinkedBranch_pincodes', on_delete=models.CASCADE)
@@ -90,7 +113,7 @@ class ManifestDetails(models.Model):
     inscaned_branch_code = models.CharField(max_length=10)
     tohub_branch_code = models.CharField(max_length=10)
     manifestnumber = models.CharField(max_length=30, unique=True)
-    vehicle_number = models.ForeignKey(Vehicle_Details, on_delete=models.CASCADE)
+    vehicle_number = models.ForeignKey(Vehicle_Details, on_delete=models.CASCADE, related_name='Vehicle_number',null=True,blank=True)
 
 
 class OutscanModel(models.Model):
@@ -103,3 +126,6 @@ class BookingDetails_temp(models.Model):
     doc_type = models.CharField(max_length=10)
     pcs = models.IntegerField()
     wt = models.DecimalField(decimal_places=2, max_digits=5)
+
+class deliverdordrs(models.Model):
+    awbno = models.CharField(max_length=10)

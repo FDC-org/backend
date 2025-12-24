@@ -63,7 +63,7 @@ class OutScanMobile(APIView):
     def post(self, r):
         awb_no = r.data['awbno']
         manifest_number = r.data['manifest_number']
-        vehicle_number = r.data['vehicle_number']
+        # vehicle_number = r.data['vehicle_number']
         tohub = r.data["tohub"]
         branch_code = UserDetails.objects.get(user=r.user)
         date = r.data['date']
@@ -71,9 +71,7 @@ class OutScanMobile(APIView):
             dt_naive = datetime.datetime.strptime(date, "%d-%m-%Y, %H:%M:%S")
             manifest = ManifestDetails.objects.create(date=dt_naive, inscaned_branch_code=branch_code.code,
                                                       tohub_branch_code=UserDetails.objects.get(code_name=tohub).code,
-                                                      manifestnumber=manifest_number,
-                                                      vehicle_number=Vehicle_Details.objects.get(
-                                                          vehiclenumber=vehicle_number))
+                                                      manifestnumber=manifest_number)
             for i in awb_no:
                 OutscanModel.objects.create(awbno=i, manifestnumber=manifest)
             branch_code.manifestnumber = str(int(branch_code.manifestnumber) + 1)
@@ -85,6 +83,10 @@ class OutScanMobile(APIView):
             ma = ManifestDetails.objects.filter(manifestnumber=manifest_number)
             if ma:
                 ma[0].delete()
+            oa = OutscanModel.objects.filter(manifestnumber=manifest_number)
+            if oa:
+                for i in oa:
+                    i.delete()
             return Response({"status": "error"}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
 
