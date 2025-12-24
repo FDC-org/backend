@@ -38,7 +38,7 @@ class DRS(APIView):
                 deliverdordrs.objects.create(awbno = no)
             DRS.objects.create(data =dt_naive,boy_code = DeliveryBoyDetalis.objects.get(name=delivery_boy),
                                branch = branch,drsno=branch.drs_number,location=lcoation)
-            branch.drs_number = branch.drs_number + 1
+            branch.drs_number = str(int(branch.drs_number) + 1)
             branch.save()
             return Response({"status": "success"},status=status.HTTP_201_CREATED)
         except Exception as e:
