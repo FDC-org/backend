@@ -1,10 +1,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path
-from .views import views
-from .views import user
-from .views import basic_api_views
-from .views import inscan, outscan
+from .views import views, delivery,user,basic_api_views,inscan,outscan
 
 urlpatterns = [
     # user api
@@ -32,6 +29,10 @@ urlpatterns = [
     path('outscan/', outscan.OutScan.as_view()),
     path('outscanmobile/', outscan.OutScanMobile.as_view()),
     path('manifestdata/<slug:manifest_number>', outscan.ManifestData.as_view()),
+
+    path('drs/<slug:date>',delivery.DRS.as_view()),
+    path('drs/', delivery.DRS.as_view()),
+    path('delivery/',delivery.Delivered.as_view()),
 
     path('test/', user.test)
 ]
