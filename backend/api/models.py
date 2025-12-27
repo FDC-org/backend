@@ -94,8 +94,9 @@ class Pincodes(models.Model):
 
 
 class Locations(models.Model):
-    code = models.OneToOneField(BranchDetails, related_name='LinkedBranch_location', on_delete=models.CASCADE)
+    code = models.CharField(max_length=20)
     location = models.CharField(max_length=20)
+    location_code = models.CharField(max_length=20)
 
 
 class InscanModel(models.Model):
