@@ -19,6 +19,7 @@ urlpatterns = [
     path('gethublist/', basic_api_views.GetHubList.as_view()),
     path('verify_token/', basic_api_views.VerifyToken.as_view()),
     path('track/<slug:awbno>', basic_api_views.Track.as_view()),
+    path('get_boy_loc/',delivery.getDeliveryBoys_locations.as_view()),
 
     # inscan
     path('inscan/', inscan.Inscan.as_view()),
