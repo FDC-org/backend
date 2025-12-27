@@ -1,9 +1,66 @@
-import json
+# from datetime import timedelta
+#
+# from django.http import JsonResponse
+# from django.utils import timezone
+#
+# from . import models
+#
+#
+# class CustomMiddleware:
+#     def __init__(self, get_response):
+#         self.get_response = get_response
+#
+#     def __call__(self, request):
+#
+#         # ✅ Admin & browser routes untouched
+#         if (
+#             request.path.startswith('/admin/')
+#             or request.path.startswith('/static/')
+#             or request.path.startswith('/media/')
+#             or request.path == '/favicon.ico'
+#         ):
+#             return self.get_response(request)
+#
+#         # ✅ Non-API routes untouched
+#         if not request.path.startswith('/api/'):
+#             return self.get_response(request)
+#
+#         # ✅ Allow OPTIONS
+#         if request.method == "OPTIONS":
+#             return self.get_response(request)
+#
+#         # 🔐 API token auth only
+#         auth_header = request.headers.get('Authorization')
+#
+#         if not auth_header or not auth_header.startswith("Token "):
+#             return JsonResponse({'error': 'token needed'}, status=401)
+#
+#         token_value = auth_header.split(' ')[1]
+#
+#         try:
+#             token_obj = models.CustomTokenModel.objects.get(token=token_value)
+#
+#             if token_obj.is_expired():
+#                 token_obj.delete()
+#                 return JsonResponse({'error': 'token expired'}, status=401)
+#
+#             request.user = token_obj.user
+#             if token_obj.expired_at - timezone.now() < timedelta(minutes=10):
+#                 token_obj.delete()
+#                 request.new_token = models.CustomTokenModel.objects.create(user=token_obj.user).token
+#
+#
+#         except models.CustomTokenModel.DoesNotExist:
+#             return JsonResponse({'error': 'invalid token'}, status=401)
+#
+#         return self.get_response(request)
+##   for admin panel use above
+
+
 from datetime import timedelta
 
 from django.http import JsonResponse
 from django.utils import timezone
-from rest_framework.response import Response
 
 from . import models
 
