@@ -11,13 +11,17 @@ class DRS(APIView):
     def get(self, r,date):
         if not date:
             return Response({'status': 'not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        drsdetails = DRS.objects.filter(date=date,branch = UserDetails.objects.get(user=r.user).code)
+        drsdetails = DRS.objects.filter(date__date=date,branch = UserDetails.objects.get(user=r.user).code)
         data = []
         for i in drsdetails:
+            s = "ofd"
             awbdata = []
             for awbno in DrsDetails.objects.filter(drsno=i.drsno).all():
-
-                awbdata.append({"awbno":awbno.awbno})
+                if awbno.status:
+                    d = DeliveryDetails.objects.filter(awbno=awbno.awbno)
+                    if d.exists():
+                        s = d[0].status
+                awbdata.append({"awbno":awbno.awbno,"status":s})
             data.append({"date": i.date,"drsno":i.drsno,"boy":DeliveryBoyDetalis.objects.get(name=i.boy_code).name,
                              "location":i.location,"awbdata":awbdata})
         return Response({"status":"success","data":data},status=status.HTTP_200_OK)
@@ -27,7 +31,7 @@ class DRS(APIView):
         awbno = r.data['awbno']
         delivery_boy = r.data['delivery_boy']
         date = r.data['date']
-        lcoation = r.data['lcoation']
+        lcoation = r.data['location']
         branch = UserDetails.objects.get(user=r.user)
         dt_naive = datetime.datetime.strptime(date, "%d-%m-%Y, %H:%M:%S")
         try:
