@@ -17,9 +17,9 @@ class Inscan(APIView):
         for i in inscandata:
             try:
                 bookingdata = BookingDetails_temp.objects.filter(awbno=i.awbno)
-                pcs = bookingdata.values('pcs')
-                wt = bookingdata.values('wt')
-                doc_type = bookingdata.values('doc_type')
+                pcs = bookingdata[0].pcs
+                wt = bookingdata[0].wt
+                doc_type = bookingdata[0].doc_type
             except Exception as e:
                 pcs = ""
                 wt = ""
@@ -49,9 +49,9 @@ class InscanMobile(APIView):
         for i in inscandata:
             try:
                 bookingdata = BookingDetails_temp.objects.filter(awbno=i.awbno)
-                pcs = bookingdata.values('pcs')
-                wt = bookingdata.values('wt')
-                doc_type = bookingdata.values('doc_type')
+                pcs = bookingdata[0].pcs
+                wt = bookingdata[0].wt
+                doc_type = bookingdata[0].doc_type
             except Exception as e:
                 pcs = ""
                 wt = ""
