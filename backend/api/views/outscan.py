@@ -15,9 +15,12 @@ class OutScan(APIView):
                                                        date__date=date)
         data = []
         for i in manifesstdata:
+            vehicle_num = ""
+            if i.vehicle_number:
+                vehicle_num = i.vehicle_number.vehiclenumber
             data.append({"date": i.date, "manifestnumber": i.manifestnumber,
                          "tohub": UserDetails.objects.get(code=i.tohub_branch_code).code_name,
-                         "vehicle_number": i.vehicle_number.vehiclenumber})
+                         "vehicle_number": vehicle_num})
         return Response({"status": "success", "data": data})
 
     def post(self, r):
@@ -55,9 +58,12 @@ class OutScanMobile(APIView):
                                                        date__date=date)
         data = []
         for i in manifesstdata:
+            vehicle_num = ""
+            if i.vehicle_number.vehiclenumber:
+                vehicle_num = i.vehicle_number.vehiclenumber
             data.append({"date": i.date, "manifestnumber": i.manifestnumber,
                          "tohub": UserDetails.objects.get(code=i.tohub_branch_code).code_name,
-                         "vehicle_number": i.vehicle_number.vehiclenumber})
+                         "vehicle_number": vehicle_num})
         return Response({"status": "success", "data": data})
 
     def post(self, r):
