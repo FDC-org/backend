@@ -10,13 +10,14 @@ from ..models import UserDetails, DrsDetails, DRS, DeliveryBoyDetalis, DeliveryD
 class DRS(APIView):
     def get(self, r,date):
         if not date:
-            return Response({'error': 'not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            return Response({'status': 'not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
         drsdetails = DRS.objects.filter(date=date,branch = UserDetails.objects.get(user=r.user).code)
         data = []
         for i in drsdetails:
             awbdata = []
             for awbno in DrsDetails.objects.filter(drsno=i.drsno).all():
-                awbdata.append(awbno.awbno)
+
+                awbdata.append({"awbno":awbno.awbno})
             data.append({"date": i.date,"drsno":i.drsno,"boy":DeliveryBoyDetalis.objects.get(name=i.boy_code).name,
                              "location":i.location,"awbdata":awbdata})
         return Response({"status":"success","data":data},status=status.HTTP_200_OK)
