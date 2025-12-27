@@ -49,9 +49,16 @@ class InscanMobile(APIView):
                                                 date__date=date)
         data = []
         for i in inscandata:
-            bookingdata = BookingDetails_temp.objects.get(awbno=i.awbno)
-            data.append({"awbno": i.awbno, "date": i.date, "type": bookingdata.doc_type, "pcs": bookingdata.pcs,
-                         "wt": bookingdata.wt})
+            try:
+                bookingdata = BookingDetails_temp.objects.filter(awbno=i.awbno)
+                pcs = bookingdata.values('pcs')
+                wt = bookingdata.values('wt')
+                doc_type = bookingdata.values('doc_type')
+            except Exception as e:
+                pcs = ""
+                wt = ""
+                doc_type = ""
+            data.append({"awbno": i.awbno, "date": i.date, "type": doc_type, "pcs": pcs, "wt": wt})
         return Response({"status": "success", "data": data})
 
     def post(self, r):
