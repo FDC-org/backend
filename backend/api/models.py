@@ -28,17 +28,17 @@ class UserDetails(models.Model):
     lastname = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=10)
     code_name = models.CharField(max_length=30)
-    manifestnumber = models.CharField(max_length=20)
-    drs_number = models.CharField(max_length=20)
+    manifestnumber = models.CharField(max_length=20,default=timezone.now().strftime('%y')+ "0" + str(code) + "010001")
+    drs_number = models.CharField(max_length=20,default=timezone.now().strftime('%y')+ "0" + str(code) + "020001")
 
     def fullname(self):
         return str(self.firstname) + " " + str(self.lastname)
 
     def set_manifest_number(self):
-        return "250" + str(self.code) + "010001"
+        return timezone.now().strftime('%y')+ "0" + str(self.code) + "010001"
 
     def set_delivery_number(self):
-        return "250" + str(self.code) + "020001"
+        return timezone.now().strftime('%y') +"0" + str(self.code) + "020001"
 
 
 
