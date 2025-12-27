@@ -65,7 +65,7 @@ class DeliveryBoyDetalis(models.Model):
     name = models.CharField(max_length=20)
     address = models.TextField()
     phone_number = models.CharField(max_length=10)
-    branch = models.OneToOneField(BranchDetails, on_delete=models.CASCADE, related_name='LinkedBranch_del')
+    branch = models.OneToOneField(BranchDetails, on_delete=models.CASCADE, related_name='LinkedBranch_delboy')
 
 class DRS(models.Model):
     drsno = models.CharField(max_length=20, primary_key=True)
