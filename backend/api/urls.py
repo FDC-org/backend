@@ -2,6 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path
 from .views import views, delivery,user,basic_api_views,inscan,outscan
+from .views.delivery import DRSapi, Delivered
 
 urlpatterns = [
     # user api
@@ -30,9 +31,9 @@ urlpatterns = [
     path('outscanmobile/', outscan.OutScanMobile.as_view()),
     path('manifestdata/<slug:manifest_number>', outscan.ManifestData.as_view()),
 
-    path('drs/<slug:date>',delivery.DRS.as_view()),
-    path('drs/', delivery.DRS.as_view()),
-    path('delivery/',delivery.Delivered.as_view()),
+    path('drs/<slug:date>',DRSapi.as_view()),
+    path('drs/', DRSapi.as_view()),
+    path('delivery/',Delivered.as_view()),
 
     path('test/', user.test)
 ]

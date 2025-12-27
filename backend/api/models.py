@@ -58,7 +58,7 @@ class BranchDetails(models.Model):
     pincode = models.CharField(max_length=6)
     address = models.TextField()
     phone_number = models.CharField(max_length=10)
-    hub = models.OneToOneField(HubDetails, on_delete=models.CASCADE, related_name='LinkedHub')
+    hub = models.CharField(max_length=20)
 
 
 class DeliveryBoyDetalis(models.Model):
@@ -66,18 +66,18 @@ class DeliveryBoyDetalis(models.Model):
     name = models.CharField(max_length=20)
     address = models.TextField()
     phone_number = models.CharField(max_length=10)
-    branch = models.OneToOneField(BranchDetails, on_delete=models.CASCADE, related_name='LinkedBranch_delboy')
+    code = models.CharField(max_length=20)
 
 class DRS(models.Model):
-    drsno = models.CharField(max_length=20, primary_key=True)
-    boycode = models.OneToOneField(DeliveryBoyDetalis, on_delete=models.CASCADE, related_name='LinkedBoy_del')
-    branch = models.ForeignKey(BranchDetails, on_delete=models.CASCADE, related_name='LinkedBranch_del')
+    drsno = models.CharField(max_length=30, primary_key=True)
+    boycode = models.CharField(max_length=20)
+    code = models.CharField(max_length=20)
     date= models.DateTimeField()
     location = models.CharField(max_length=20)
 
 
 class DrsDetails(models.Model):
-    drsno = models.OneToOneField(DRS,on_delete=models.CASCADE, related_name='LinkedDelivery_number')
+    drsno = models.CharField(max_length=30)
     awbno = models.CharField(max_length=10)
     status = models.BooleanField(default=False) # status if true either delivered or undeliverd or rto
 
@@ -89,12 +89,12 @@ class DeliveryDetails(models.Model):
     reason = models.TextField(default="") # it is reason for undelivered
 
 class Pincodes(models.Model):
-    branch_code = models.OneToOneField(BranchDetails, related_name='LinkedBranch_pincodes', on_delete=models.CASCADE)
+    code = models.CharField(max_length=20)
     pincode = models.CharField(max_length=6)
 
 
 class Locations(models.Model):
-    branch_code = models.OneToOneField(BranchDetails, related_name='LinkedBranch_location', on_delete=models.CASCADE)
+    code = models.OneToOneField(BranchDetails, related_name='LinkedBranch_location', on_delete=models.CASCADE)
     location = models.CharField(max_length=20)
 
 
@@ -130,3 +130,110 @@ class BookingDetails_temp(models.Model):
 
 class deliverdordrs(models.Model):
     awbno = models.CharField(max_length=10)
+
+
+
+# -------------------- ADMIN REGISTRATION --------------------
+
+from django.contrib import admin
+
+
+@admin.register(CustomTokenModel)
+class CustomTokenAdmin(admin.ModelAdmin):
+    list_display = ('user', 'token', 'created_at', 'expired_at')
+    search_fields = ('user__username',)
+    readonly_fields = ('token', 'created_at', 'expired_at')
+
+
+@admin.register(UserDetails)
+class UserDetailsAdmin(admin.ModelAdmin):
+    list_display = ('user', 'firstname', 'lastname', 'phone_number', 'code', 'type')
+    search_fields = ('firstname', 'lastname', 'phone_number', 'code')
+
+
+@admin.register(HubDetails)
+class HubDetailsAdmin(admin.ModelAdmin):
+    list_display = ('hub_code', 'hubname', 'location', 'pincode')
+    search_fields = ('hub_code', 'hubname')
+
+
+@admin.register(BranchDetails)
+class BranchDetailsAdmin(admin.ModelAdmin):
+    list_display = ('branch_code', 'branchname', 'location', 'hub')
+    search_fields = ('branch_code', 'branchname')
+
+
+@admin.register(DeliveryBoyDetalis)
+class DeliveryBoyAdmin(admin.ModelAdmin):
+    list_display = ('boy_code', 'name', 'phone_number', 'code')
+    search_fields = ('boy_code', 'name')
+
+
+@admin.register(DRS)
+class DRSAdmin(admin.ModelAdmin):
+    list_display = ('drsno', 'boycode', 'code', 'date', 'location')
+    list_filter = ('code', 'date')
+    search_fields = ('drsno',)
+
+
+@admin.register(DrsDetails)
+class DrsDetailsAdmin(admin.ModelAdmin):
+    list_display = ('drsno', 'awbno', 'status')
+    list_filter = ('status',)
+
+
+@admin.register(DeliveryDetails)
+class DeliveryDetailsAdmin(admin.ModelAdmin):
+    list_display = ('awbno', 'status', 'recievername')
+    list_filter = ('status',)
+    search_fields = ('awbno',)
+
+
+@admin.register(Pincodes)
+class PincodeAdmin(admin.ModelAdmin):
+    list_display = ('code', 'pincode')
+    search_fields = ('pincode',)
+
+
+@admin.register(Locations)
+class LocationAdmin(admin.ModelAdmin):
+    list_display = ('code', 'location')
+    search_fields = ('location',)
+
+
+@admin.register(InscanModel)
+class InscanAdmin(admin.ModelAdmin):
+    list_display = ('awbno', 'date', 'inscaned_branch_code')
+    list_filter = ('date',)
+    search_fields = ('awbno',)
+
+
+@admin.register(Vehicle_Details)
+class VehicleAdmin(admin.ModelAdmin):
+    list_display = ('vehiclenumber', 'hub_code')
+    search_fields = ('vehiclenumber',)
+
+
+@admin.register(ManifestDetails)
+class ManifestAdmin(admin.ModelAdmin):
+    list_display = ('manifestnumber', 'date', 'inscaned_branch_code', 'tohub_branch_code')
+    list_filter = ('date',)
+    search_fields = ('manifestnumber',)
+
+
+@admin.register(OutscanModel)
+class OutscanAdmin(admin.ModelAdmin):
+    list_display = ('awbno', 'manifestnumber')
+    search_fields = ('awbno',)
+
+
+@admin.register(BookingDetails_temp)
+class BookingTempAdmin(admin.ModelAdmin):
+    list_display = ('awbno', 'doc_type', 'pcs', 'wt')
+    search_fields = ('awbno',)
+
+
+@admin.register(deliverdordrs)
+class DeliveredOrDrsAdmin(admin.ModelAdmin):
+    list_display = ('awbno',)
+    search_fields = ('awbno',)
