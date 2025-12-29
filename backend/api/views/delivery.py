@@ -101,8 +101,8 @@ class Delivered(APIView):
                     DeliveryDetails.objects.create(awbno=awb, status=statusre, reason=reason)
                     dd = DrsDetails.objects.filter(awbno=awbno)
                     if dd.exists():
-                        dd.status = True
-                        dd.save()
+                        dd[0].status = True
+                        dd[0].save()
             else:
                 return Response({"status":"invalid status"}, status=awbstatus.HTTP_400_BAD_REQUEST)
             return Response({"status":"success",}, status=status.HTTP_201_CREATED)
