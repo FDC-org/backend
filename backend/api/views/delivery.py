@@ -1,4 +1,5 @@
 import datetime
+import json
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -75,6 +76,10 @@ class Delivered(APIView):
 
     def post(self, r):
         awbno = r.data['awbno']
+        if awbno:
+            awbno = json.load(awbno)
+        else:
+            return Response({"status":"invalid awbno"},status=status.HTTP_400_BAD_REQUEST)
         awbstatus = r.data['status'].strip().lower()
         try:
             if awbstatus == 'delivered':
