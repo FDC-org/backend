@@ -81,8 +81,9 @@ class Delivered(APIView):
                 receivername = r.data['receivername']
                 receivernumber = r.data['receivername']
                 image = r.FILES.get('image')
+                date = r.data['date']
                 for awb in awbno:
-                    DeliveryDetails.objects.create(awbno = awb,status = 'delivered',receivername = receivername,image = image,recievernumber=receivernumber)
+                    DeliveryDetails.objects.create(awbno = awb,status = 'delivered',receivername = receivername,image = image,recievernumber=receivernumber,date= date)
             elif awbstatus == 'undelivered' or  awbstatus == 'rto':
                 reason = r.data['reason']
                 statusre = "undelivered" if awbstatus == 'undelivered' else "rto"
@@ -94,6 +95,7 @@ class Delivered(APIView):
             return Response({"status":"success",}, status=status.HTTP_201_CREATED)
         except Exception as e:
             print(e)
+            DeliveryDetails.objects.filter(awbno=awbno).delete()
             return Response({"status":"error"},status=status.HTTP_400_BAD_REQUEST)
 
 
