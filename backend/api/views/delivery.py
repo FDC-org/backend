@@ -94,11 +94,12 @@ class Delivered(APIView):
                     dd.status = True
                     dd.save()
             elif awbstatus == 'undelivered' or  awbstatus == 'rto':
+                date = r.data['date']
                 reason = r.data['reason']
                 statusre = "undelivered" if awbstatus == 'undelivered' else "rto"
                 for awb in awbno:
                     deliverdordrs.objects.filter(awbno=awb).delete()
-                    DeliveryDetails.objects.create(awbno=awb, status=statusre, reason=reason)
+                    DeliveryDetails.objects.create(awbno=awb, status=statusre, reason=reason,date=date)
                     dd = DrsDetails.objects.filter(awbno=awbno)
                     if dd.exists():
                         dd[0].status = True
