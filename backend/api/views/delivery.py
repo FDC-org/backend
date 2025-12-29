@@ -79,7 +79,7 @@ class Delivered(APIView):
         try:
             if awbstatus == 'delivered':
                 receivername = r.data['receivername']
-                receivernumber = r.data['receivername']
+                receivernumber = r.data['receivernumber']
                 image = r.FILES.get('image')
                 for awb in awbno:
                     DeliveryDetails.objects.create(awbno = awb,status = 'delivered',receivername = receivername,image = image,recievernumber=receivernumber)
