@@ -91,8 +91,9 @@ class Delivered(APIView):
                 for awb in awbno:
                     DeliveryDetails.objects.create(awbno = awb,status = 'delivered',recievername = receivername,image = image,recievernumber=receivernumber,date= date)
                     dd = DrsDetails.objects.filter(awbno=awbno)
-                    dd.status = True
-                    dd.save()
+                    if dd.exists():
+                        dd[0].status = True
+                        dd[0].save()
             elif awbstatus == 'undelivered' or  awbstatus == 'rto':
                 date = r.data['date']
                 reason = r.data['reason']
