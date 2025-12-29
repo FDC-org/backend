@@ -90,7 +90,7 @@ class Delivered(APIView):
                 date = r.data['date']
                 for awb in awbno:
                     DeliveryDetails.objects.create(awbno = awb,status = 'delivered',recievername = receivername,image = image,recievernumber=receivernumber,date= date)
-                    dd = DrsDetails.objects.get(awbno=awbno)
+                    dd = DrsDetails.objects.filter(awbno=awbno)
                     dd.status = True
                     dd.save()
             elif awbstatus == 'undelivered' or  awbstatus == 'rto':
@@ -99,9 +99,10 @@ class Delivered(APIView):
                 for awb in awbno:
                     deliverdordrs.objects.filter(awbno=awb).delete()
                     DeliveryDetails.objects.create(awbno=awb, status=statusre, reason=reason)
-                    dd = DrsDetails.objects.get(awbno=awbno)
-                    dd.status = True
-                    dd.save()
+                    dd = DrsDetails.objects.filter(awbno=awbno)
+                    if dd.exists():
+                        dd.status = True
+                        dd.save()
             else:
                 return Response({"status":"invalid status"}, status=awbstatus.HTTP_400_BAD_REQUEST)
             return Response({"status":"success",}, status=status.HTTP_201_CREATED)
