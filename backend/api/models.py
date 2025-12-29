@@ -133,6 +133,23 @@ class deliverdordrs(models.Model):
     awbno = models.CharField(max_length=10)
 
 
+class BookingDetails(models.Model):
+    awbno = models.CharField(max_length=10)
+    doc_type = models.CharField(max_length=10)
+    pcs = models.IntegerField()
+    wt = models.DecimalField(decimal_places=3, max_digits=5)
+    sendername = models.CharField(max_length=50)
+    senderaddress = models.TextField()
+    senderphonenumber = models.CharField(max_length=10)
+    recievername = models.CharField(max_length=50)
+    recieveraddress = models.TextField()
+    recieverphonenumber = models.CharField(max_length=10)
+    destination_location_code = models.CharField(max_length=50)
+    mode = models.CharField(max_length=20)
+    date = models.DateTimeField()
+    booked_code = models.CharField(max_length=20)
+    contents = models.CharField()
+
 
 # -------------------- ADMIN REGISTRATION --------------------
 

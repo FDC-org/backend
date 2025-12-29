@@ -48,10 +48,10 @@ class GetHubList(APIView):
         data2 = BranchDetails.objects.all()
         for i in data:
             if i.hub_code != UserDetails.objects.get(user=r.user).code:
-                hubs.append({"code": i.hub_code, "name": i.hubname})
+                hubs.append({"code": i.hub_code, "name": i.hubname,"type":"hub"})
         for i in data2:
             if i.branch_code != UserDetails.objects.get(user=r.user).code:
-                hubs.append({"code": i.branch_code, "name": i.branchname})
+                hubs.append({"code": i.branch_code, "name": i.branchname,"type":"branch"})
         return Response({"hub": hubs})
 
 

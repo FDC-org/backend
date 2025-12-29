@@ -4,7 +4,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..models import UserDetails, DrsDetails, DRS, DeliveryBoyDetalis, DeliveryDetails, deliverdordrs, Locations
+from ..models import UserDetails, DrsDetails, DRS, DeliveryBoyDetalis, DeliveryDetails, deliverdordrs, Locations, \
+    BookingDetails
 
 
 class DRSapi(APIView):
@@ -21,7 +22,15 @@ class DRSapi(APIView):
                     d = DeliveryDetails.objects.filter(awbno=awbno.awbno)
                     if d.exists():
                         s = d[0].status
-                awbdata.append({"awbno":awbno.awbno,"status":s})
+                name = ""
+                pcs = ""
+                wt = ""
+                adata = BookingDetails.objects.filter(awbno=awbno.awbno)
+                if adata.exists():
+                    pcs = adata[0].pcs
+                    wt = adata[0].wt
+                    name = adata[0].recievername
+                awbdata.append({"awbno":awbno.awbno,"status":s,"pcs":pcs,"wt":wt,"receiver_name":name})
             data.append({"date": i.date,"drsno":i.drsno,"boy":DeliveryBoyDetalis.objects.get(boy_code=i.boycode).name,
                              "location":i.location,"awbdata":awbdata})
         return Response({"status":"success","data":data},status=status.HTTP_200_OK)
