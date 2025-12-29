@@ -85,8 +85,10 @@ class DeliveryDetails(models.Model):
     awbno = models.CharField(max_length=10)
     status = models.CharField(max_length=20) #m delivered, undelivered, rto
     recievername = models.CharField(max_length=20,default='')
+    recievernumber = models.CharField(max_length=10,default='')
     image = models.ImageField(upload_to='delivery/', null=True, blank=True)
     reason = models.TextField(default="") # it is reason for undelivered
+    date = models.DateField()
 
 class Pincodes(models.Model):
     code = models.CharField(max_length=20)
@@ -148,7 +150,7 @@ class BookingDetails(models.Model):
     mode = models.CharField(max_length=20)
     date = models.DateTimeField()
     booked_code = models.CharField(max_length=20)
-    contents = models.CharField()
+    contents = models.TextField()
 
 
 # -------------------- ADMIN REGISTRATION --------------------
