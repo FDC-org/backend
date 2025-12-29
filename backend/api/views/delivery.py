@@ -77,7 +77,7 @@ class Delivered(APIView):
     def post(self, r):
         awbno = r.data['awbno']
         if awbno:
-            awbno = json.load(awbno)
+            awbno = json.loads(awbno)
         else:
             return Response({"status":"invalid awbno"},status=status.HTTP_400_BAD_REQUEST)
         awbstatus = r.data['status'].strip().lower()
