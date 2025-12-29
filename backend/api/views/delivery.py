@@ -79,9 +79,10 @@ class Delivered(APIView):
         try:
             if awbstatus == 'delivered':
                 receivername = r.data['receivername']
+                receivernumber = r.data['receivernumber']
                 image = r.FILES.get('image')
                 for awb in awbno:
-                    DeliveryDetails.objects.create(awbno = awb,status = 'delivered',receivername = receivername,image = image)
+                    DeliveryDetails.objects.create(awbno = awb,status = 'delivered',receivername = receivername,image = image,recievernumber=receivernumber)
             elif awbstatus == 'undelivered' or  awbstatus == 'rto':
                 reason = r.data['reason']
                 statusre = "undelivered" if awbstatus == 'undelivered' else "rto"
