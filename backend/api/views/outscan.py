@@ -4,7 +4,7 @@ from django.utils.timezone import make_aware
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ..models import UserDetails, OutscanModel, ManifestDetails, Vehicle_Details, BookingDetails_temp
+from ..models import UserDetails, OutscanModel, ManifestDetails, Vehicle_Details, BookingDetails_temp, BookingDetails
 
 
 class OutScan(APIView):
@@ -105,7 +105,7 @@ class ManifestData(APIView):
         manifest_details = ManifestDetails.objects.get(manifestnumber=manifest_number)
         for i in OutscanModel.objects.filter(
                 manifestnumber=ManifestDetails.objects.get(manifestnumber=manifest_number)):
-            awbdetails = BookingDetails_temp.objects.filter(awbno=i.awbno)
+            awbdetails = BookingDetails.objects.filter(awbno=i.awbno)
             data.append({"awbno": i.awbno, "pcs": awbdetails[0].pcs, "wt": awbdetails[0].wt})
         return Response({"status": "success", "date": manifest_details.date,
                          "tohub": UserDetails.objects.get(code=manifest_details.tohub_branch_code).code_name,

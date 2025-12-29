@@ -1,11 +1,9 @@
 import datetime
 
-from django.utils.timezone import make_aware
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ..models import UserDetails, InscanModel, BookingDetails_temp
-
+from ..models import UserDetails, InscanModel, BookingDetails
 
 class Inscan(APIView):
     def get(self, r, date):
@@ -16,7 +14,7 @@ class Inscan(APIView):
         data = []
         for i in inscandata:
             try:
-                bookingdata = BookingDetails_temp.objects.filter(awbno=i.awbno)
+                bookingdata = BookingDetails.objects.filter(awbno=i.awbno)
                 pcs = bookingdata[0].pcs
                 wt = bookingdata[0].wt
                 doc_type = bookingdata[0].doc_type
@@ -48,7 +46,7 @@ class InscanMobile(APIView):
         data = []
         for i in inscandata:
             try:
-                bookingdata = BookingDetails_temp.objects.filter(awbno=i.awbno)
+                bookingdata = BookingDetails.objects.filter(awbno=i.awbno)
                 pcs = bookingdata[0].pcs
                 wt = bookingdata[0].wt
                 doc_type = bookingdata[0].doc_type

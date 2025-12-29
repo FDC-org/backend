@@ -2,8 +2,22 @@
 <project version="4">
   <component name="dataSourceStorageLocal" created-in="PY-253.29346.142">
     <data-source name="Django default" uuid="ca0c7b7f-999b-4d07-8616-3702cfe53461">
-      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="MYSQL" />
-      <schema-mapping />
+      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="MYSQL">
+        <extra-name-characters>#@</extra-name-characters>
+        <identifier-quote-string>&quot;</identifier-quote-string>
+      </database-info>
+      <case-sensitivity plain-identifiers="exact" quoted-identifiers="exact" />
+      <user-name>fdcdb-admin</user-name>
+      <schema-mapping>
+        <introspection-scope>
+          <node kind="schema" qname="fdc_db" />
+        </introspection-scope>
+      </schema-mapping>
+      <ssl-config use-ide-store="true" use-java-store="true" use-system-store="true">
+        <ca-cert>$USER_HOME$/Downloads/ca.pem</ca-cert>
+        <enabled>true</enabled>
+        <mode>REQUIRE</mode>
+      </ssl-config>
     </data-source>
   </component>
 </project>

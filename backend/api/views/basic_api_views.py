@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..models import UserDetails, BookingDetails_temp, HubDetails, Vehicle_Details, InscanModel, OutscanModel, \
-    ManifestDetails
+    ManifestDetails, BranchDetails
 
 
 class UseDetails(APIView):
@@ -45,9 +45,13 @@ class GetHubList(APIView):
     def get(self, r):
         hubs = []
         data = HubDetails.objects.all()
+        data2 = BranchDetails.objects.all()
         for i in data:
             if i.hub_code != UserDetails.objects.get(user=r.user).code:
-                hubs.append({"code": i.hub_code, "name": i.hubname})
+                hubs.append({"code": i.hub_code, "name": i.hubname,"type":"hub"})
+        for i in data2:
+            if i.branch_code != UserDetails.objects.get(user=r.user).code:
+                hubs.append({"code": i.branch_code, "name": i.branchname,"type":"branch"})
         return Response({"hub": hubs})
 
 
@@ -67,6 +71,8 @@ class VehicleDetails(APIView):
         except Exception as e:
             print(e)
             return Response({"status": "error"})
+
+
 
 
 class VerifyToken(APIView):

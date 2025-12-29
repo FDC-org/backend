@@ -4,7 +4,9 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..models import UserDetails, DrsDetails, DRS, DeliveryBoyDetalis, DeliveryDetails, deliverdordrs
+from ..models import UserDetails, DrsDetails, DRS, DeliveryBoyDetalis, DeliveryDetails, deliverdordrs, Locations, \
+    BookingDetails
+
 
 class DRSapi(APIView):
     def get(self, r,date):
@@ -20,7 +22,15 @@ class DRSapi(APIView):
                     d = DeliveryDetails.objects.filter(awbno=awbno.awbno)
                     if d.exists():
                         s = d[0].status
-                awbdata.append({"awbno":awbno.awbno,"status":s})
+                name = ""
+                pcs = ""
+                wt = ""
+                adata = BookingDetails.objects.filter(awbno=awbno.awbno)
+                if adata.exists():
+                    pcs = adata[0].pcs
+                    wt = adata[0].wt
+                    name = adata[0].recievername
+                awbdata.append({"awbno":awbno.awbno,"status":s,"pcs":pcs,"wt":wt,"receiver_name":name})
             data.append({"date": i.date,"drsno":i.drsno,"boy":DeliveryBoyDetalis.objects.get(boy_code=i.boycode).name,
                              "location":i.location,"awbdata":awbdata})
         return Response({"status":"success","data":data},status=status.HTTP_200_OK)
@@ -37,7 +47,7 @@ class DRSapi(APIView):
             for no in awbno:
                 if deliverdordrs.objects.filter(awbno=no).exists():
                         return Response({"status":"exists","awbno":no},status=status.HTTP_409_CONFLICT)
-            drs = DRS.objects.create(date=dt_naive, boycode=DeliveryBoyDetalis.objects.get(name=delivery_boy).boy_code,
+            drs = DRS.objects.create(date=dt_naive, boycode=delivery_boy,
                                code=branch.code, drsno=branch.drs_number, location=lcoation)
             for no in awbno:
                 DrsDetails.objects.create(drsno =drs.drsno, awbno = no)
@@ -85,3 +95,15 @@ class Delivered(APIView):
             print(e)
             return Response({"status":"error"},status=status.HTTP_400_BAD_REQUEST)
 
+
+class getDeliveryBoys_locations(APIView):
+    def get(self, r):
+        data = []
+        boydata = []
+        locdata = []
+        for i in DeliveryBoyDetalis.objects.filter(code = UserDetails.objects.get(user=r.user).code):
+            boydata.append({'boy_code':i.boy_code,'name':i.name})
+        for i in Locations.objects.filter(code = UserDetails.objects.get(user=r.user).code):
+            locdata.append({'loc_code':i.location_code,'location':i.location})
+        data.append({'boy_code':boydata,'location':locdata})
+        return Response({"status":"success","data":data},status=status.HTTP_200_OK)
