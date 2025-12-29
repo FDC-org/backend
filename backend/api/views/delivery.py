@@ -18,7 +18,8 @@ class DRSapi(APIView):
         for i in drsdetails:
             s = "ofd"
             awbdata = []
-            for awbno in DrsDetails.objects.filter(drsno=i.drsno).all():
+            for awbno in DrsDetails.objects.filter(drsno=i.drsno):
+                s = "ofd"
                 if awbno.status:
                     d = DeliveryDetails.objects.filter(awbno=awbno.awbno)
                     if d.exists():
@@ -89,18 +90,18 @@ class Delivered(APIView):
                 date = r.data['date']
                 for awb in awbno:
                     DeliveryDetails.objects.create(awbno = awb,status = 'delivered',recievername = receivername,image = image,recievernumber=receivernumber,date= date)
-                dd = DrsDetails.objects.get(awbno=awbno)
-                dd.status = True
-                dd.save()
+                    dd = DrsDetails.objects.get(awbno=awbno)
+                    dd.status = True
+                    dd.save()
             elif awbstatus == 'undelivered' or  awbstatus == 'rto':
                 reason = r.data['reason']
                 statusre = "undelivered" if awbstatus == 'undelivered' else "rto"
                 for awb in awbno:
                     deliverdordrs.objects.filter(awbno=awb).delete()
                     DeliveryDetails.objects.create(awbno=awb, status=statusre, reason=reason)
-                dd = DrsDetails.objects.get(awbno=awbno)
-                dd.status = True
-                dd.save()
+                    dd = DrsDetails.objects.get(awbno=awbno)
+                    dd.status = True
+                    dd.save()
             else:
                 return Response({"status":"invalid status"}, status=awbstatus.HTTP_400_BAD_REQUEST)
             return Response({"status":"success",}, status=status.HTTP_201_CREATED)
