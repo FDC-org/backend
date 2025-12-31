@@ -26,7 +26,7 @@ class Booking(APIView):
         contents = request.data['contents']
         pincode = request.data['pincode']
         if BookingDetails.objects.filter(awbno=awbno).exists():
-            return Response({"status":"Already Booked"})
+            return Response({"status":"exists"})
         try:
             BookingDetails.objects.create(awbno=awbno,pcs=pcs,wt=wt,sendername=sendername,
                                           receivername=receivername,senderaddress=senderaddress,
