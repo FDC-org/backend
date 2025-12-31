@@ -2,6 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path
 from .views import views, delivery,user,basic_api_views,inscan,outscan
+from .views.Booking import Booking
 from .views.delivery import DRSapi, Delivered
 
 urlpatterns = [
@@ -20,6 +21,11 @@ urlpatterns = [
     path('verify_token/', basic_api_views.VerifyToken.as_view()),
     path('track/<slug:awbno>', basic_api_views.Track.as_view()),
     path('get_boy_loc/',delivery.getDeliveryBoys_locations.as_view()),
+
+    # booking
+
+    path('booking/',Booking.as_view()),
+
 
     # inscan
     path('inscan/', inscan.Inscan.as_view()),

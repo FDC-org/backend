@@ -83,6 +83,11 @@ class Delivered(APIView):
             return Response({"status":"invalid awbno"},status=status.HTTP_400_BAD_REQUEST)
         awbstatus = r.data['status'].strip().lower()
         try:
+            dd = DeliveryDetails.objects.filter(awbno=awbno)
+            if  dd.exists():
+                dd[0].status = awbstatus
+                dd[0].save()
+                return Response({"status":"success"},status=status.HTTP_201_CREATED)
             if awbstatus == 'delivered':
                 receivername = r.data['receivername']
                 receivernumber = r.data['receivernumber']
@@ -125,3 +130,6 @@ class getDeliveryBoys_locations(APIView):
             locdata.append({'loc_code':i.location_code,'location':i.location})
         data.append({'boy_code':boydata,'location':locdata})
         return Response({"status":"success","data":data},status=status.HTTP_200_OK)
+    # def post(self,r):
+    #     boycode = r.data['boy_code']
+    #     location = r.data['location']
