@@ -29,9 +29,9 @@ class Booking(APIView):
             return Response({"status":"exists"})
         try:
             BookingDetails.objects.create(awbno=awbno,pcs=pcs,wt=wt,sendername=sendername,
-                                          receivername=receivername,senderaddress=senderaddress,
-                                          receiveraddress=receiveraddress,senderphonenumber=senderphone,
-                                          receiverphonenumber=receiverphone,doc_type=doc_type,
+                                          recievername=receivername,senderaddress=senderaddress,
+                                          recieveraddress=receiveraddress,senderphonenumber=senderphone,
+                                          recieverphonenumber=receiverphone,doc_type=doc_type,
                                           destination_code=destination_code,mode=mode,date=date,
                                           booked_code=booked_code,contents=contents,pincode=pincode)
             return Response({"status":"success"})
