@@ -1,9 +1,13 @@
 import datetime
 import json
+import random
 
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import cloudinary
+import cloudinary.uploader
+from cloudinary.utils import cloudinary_url
 
 from ..models import UserDetails, DrsDetails, DRS, DeliveryBoyDetalis, DeliveryDetails, deliverdordrs, Locations, \
     BookingDetails
@@ -94,7 +98,8 @@ class Delivered(APIView):
                 image = r.FILES.get('image')
                 date = r.data['date']
                 for awb in awbno:
-                    DeliveryDetails.objects.create(awbno = awb,status = 'delivered',recievername = receivername,image = image,recievernumber=receivernumber,date= date)
+                    image_url  = upload_file(image,'pod')
+                    DeliveryDetails.objects.create(awbno = awb,status = 'delivered',recievername = receivername,image = image_url,recievernumber=receivernumber,date= date)
                     dd = DrsDetails.objects.filter(awbno=awbno)
                     if dd.exists():
                         dd[0].status = True
@@ -130,6 +135,55 @@ class getDeliveryBoys_locations(APIView):
             locdata.append({'loc_code':i.location_code,'location':i.location})
         data.append({'boy_code':boydata,'location':locdata})
         return Response({"status":"success","data":data},status=status.HTTP_200_OK)
-    # def post(self,r):
-    #     boycode = r.data['boy_code']
-    #     location = r.data['location']
+
+
+class AddDeliveryBoys(APIView):
+    def post(self, r):
+        boycode = f"B{random.randint(1,999999):06d}"
+        boyname = r.data['boyname']
+        phone = r.data['phone']
+        address = r.data['address']
+        code = UserDetails.objects.get(user=r.user).code
+        try:
+            while DeliveryBoyDetalis.objects.filter(boy_code=boycode).exists():
+                boycode = f"B{random.randint(1, 999999):06d}"
+            DeliveryBoyDetalis.objects.create(boy_code=boycode,name=boyname,phone_number=phone,address=address,code=code)
+            return Response({"status":"success"},status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print(e)
+            return Response({"status":"error"},status=status.HTTP_400_BAD_REQUEST)
+
+class AddAreas(APIView):
+    def post(self, r):
+        area = r.data['area']
+        area_code = f"A{random.randint(1,999999):06d}"
+        code = UserDetails.objects.get(user=r.user).code
+        try:
+            while Locations.objects.filter(area_code=area_code).exists():
+                area_code = f"A{random.randint(1, 999999):06d}"
+            Locations.objects.create(code=code,location=area,location_code=area_code)
+            return Response({"status":"success"},status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print(e)
+            return Response({"status":"error"},status=status.HTTP_400_BAD_REQUEST)
+
+def upload_file(file,drsno):
+
+    # Configuration
+    cloudinary.config(
+        cloud_name="di9u2ri58",
+        api_key="631486297826291",
+        api_secret="8GtAsx1lGtkxj9-YOD-58eHWLJg",  # Click 'View API Keys' above to copy your API secret
+        secure=True
+    )
+
+    # Upload an image
+    upload_result = cloudinary.uploader.upload(file,
+                                               public_id=drsno)
+    print(upload_result["secure_url"])
+
+    # Optimize delivery by resizing and applying auto-format and auto-quality
+    optimize_url, _ = cloudinary_url(upload_result["secure_url"], fetch_format="auto", quality="auto")
+    print(optimize_url)
+
+    return optimize_url
