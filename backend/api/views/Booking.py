@@ -36,5 +36,5 @@ class Booking(APIView):
                                           booked_code=booked_code,contents=contents,pincode=pincode)
             return Response({"status":"success"})
         except Exception as e:
-            print("error")
+            print(e)
             return Response({"status":"error"})
