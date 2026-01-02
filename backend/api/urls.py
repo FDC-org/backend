@@ -42,6 +42,8 @@ urlpatterns = [
     path('drs/', DRSapi.as_view()),
     path('delivery/',Delivered.as_view()),
 
-    path('test/', user.test)
+    path('test/', user.test),
+    path('adddelboy/',delivery.AddDeliveryBoys.as_view()),
+    path('addloc/',delivery.AddAreas.as_view()),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
