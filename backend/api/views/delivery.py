@@ -99,7 +99,7 @@ class Delivered(APIView):
                 image = r.FILES.get('image')
                 date = r.data['date']
                 for awb in awbno:
-                    image_url  = upload_file(image,str(uuid.UUID()))
+                    image_url  = upload_file(image,str(uuid.uuid4().hex))
                     DeliveryDetails.objects.create(awbno = awb,status = 'delivered',recievername = receivername,image = image_url,recievernumber=receivernumber,date= date)
                     dd = DrsDetails.objects.filter(awbno=awbno)
                     if dd.exists():
