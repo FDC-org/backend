@@ -1,6 +1,7 @@
 import datetime
 import json
 import random
+import uuid
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -98,7 +99,7 @@ class Delivered(APIView):
                 image = r.FILES.get('image')
                 date = r.data['date']
                 for awb in awbno:
-                    image_url  = upload_file(image,'pod')
+                    image_url  = upload_file(image,str(uuid.UUID()))
                     DeliveryDetails.objects.create(awbno = awb,status = 'delivered',recievername = receivername,image = image_url,recievernumber=receivernumber,date= date)
                     dd = DrsDetails.objects.filter(awbno=awbno)
                     if dd.exists():
