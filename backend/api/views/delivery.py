@@ -4,6 +4,9 @@ import json
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import cloudinary
+import cloudinary.uploader
+from cloudinary.utils import cloudinary_url
 
 from ..models import UserDetails, DrsDetails, DRS, DeliveryBoyDetalis, DeliveryDetails, deliverdordrs, Locations, \
     BookingDetails
@@ -94,7 +97,8 @@ class Delivered(APIView):
                 image = r.FILES.get('image')
                 date = r.data['date']
                 for awb in awbno:
-                    DeliveryDetails.objects.create(awbno = awb,status = 'delivered',recievername = receivername,image = image,recievernumber=receivernumber,date= date)
+                    image_url  = upload_file(image,'pod')
+                    DeliveryDetails.objects.create(awbno = awb,status = 'delivered',recievername = receivername,image = image_url,recievernumber=receivernumber,date= date)
                     dd = DrsDetails.objects.filter(awbno=awbno)
                     if dd.exists():
                         dd[0].status = True
@@ -133,3 +137,26 @@ class getDeliveryBoys_locations(APIView):
     # def post(self,r):
     #     boycode = r.data['boy_code']
     #     location = r.data['location']
+
+
+
+def upload_file(file,drsno):
+
+    # Configuration
+    cloudinary.config(
+        cloud_name="di9u2ri58",
+        api_key="631486297826291",
+        api_secret="8GtAsx1lGtkxj9-YOD-58eHWLJg",  # Click 'View API Keys' above to copy your API secret
+        secure=True
+    )
+
+    # Upload an image
+    upload_result = cloudinary.uploader.upload(file,
+                                               public_id=drsno)
+    print(upload_result["secure_url"])
+
+    # Optimize delivery by resizing and applying auto-format and auto-quality
+    optimize_url, _ = cloudinary_url("shoes", fetch_format="auto", quality="auto")
+    print(optimize_url)
+
+    return optimize_url

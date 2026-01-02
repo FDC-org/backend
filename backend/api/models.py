@@ -86,7 +86,7 @@ class DeliveryDetails(models.Model):
     status = models.CharField(max_length=20) #m delivered, undelivered, rto
     recievername = models.CharField(max_length=20,default='')
     recievernumber = models.CharField(max_length=10,default='')
-    image = models.ImageField(upload_to='delivery/', null=True, blank=True)
+    image = models.TextField(blank=True)
     reason = models.TextField(default="") # it is reason for undelivered
     date = models.DateField()
 
