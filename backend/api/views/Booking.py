@@ -22,7 +22,7 @@ class Booking(APIView):
         receiveraddress = request.data['receiveraddress']
         destination_code = request.data['destination_code']
         mode = request.data['mode']
-        booked_code = UserDetails.objects.get(user=request.user)
+        booked_code = UserDetails.objects.get(user=request.user).code
         contents = request.data['contents']
         pincode = request.data['pincode']
         if BookingDetails.objects.filter(awbno=awbno).exists():
