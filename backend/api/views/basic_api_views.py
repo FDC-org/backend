@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..models import UserDetails, BookingDetails_temp, HubDetails, Vehicle_Details, InscanModel, OutscanModel, \
-    ManifestDetails, BranchDetails
+    ManifestDetails, BranchDetails, BookingDetails
 
 
 class UseDetails(APIView):
@@ -116,10 +116,19 @@ class Track(APIView):
 
             tracking_data.sort(key=lambda x: x['date'])
 
-            booking_details = BookingDetails_temp.objects.filter(awbno=awbno)
-            if booking_details:
-                return Response({'tracking_data': tracking_data,
-                                 'booking': {'pcs': booking_details[0].pcs, "wt": booking_details[0].wt},
+            booking_details = BookingDetails.objects.filter(awbno=awbno)
+            destination=""
+            if booking_details.exists():
+                if HubDetails.objects.filter(booking_details=booking_details[0].destination_code).exists():
+                    destination = HubDetails.objects.get(booking_details=booking_details[0].destination_code).hubname
+                elif BranchDetails.objects.filter(booking_details=booking_details[0].destination_code).exists():
+                    destination = BranchDetails.objects.get(booking_details=booking_details[0].destination_code).branchname
+                return Response({'tracking_data': tracking_data,"awbno": awbno,
+                                 'booking': {'pcs': booking_details[0].pcs, "wt": booking_details[0].wt,
+                                             "recname":booking_details[0].recievername,"date":booking_details[0].date,
+                                             "recphone":booking_details[0].recieverphonenumber,
+                                             "destination":destination,
+                                             },
                                  'status': "success"})
             return Response({'tracking_data': tracking_data, 'booking': 'none', 'status': "success"})
         except Exception as e:

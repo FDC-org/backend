@@ -1,5 +1,6 @@
 import datetime
 import json
+import random
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -134,11 +135,37 @@ class getDeliveryBoys_locations(APIView):
             locdata.append({'loc_code':i.location_code,'location':i.location})
         data.append({'boy_code':boydata,'location':locdata})
         return Response({"status":"success","data":data},status=status.HTTP_200_OK)
-    # def post(self,r):
-    #     boycode = r.data['boy_code']
-    #     location = r.data['location']
 
 
+class AddDeliveryBoys(APIView):
+    def post(self, r):
+        boycode = f"B{random.randint(1,999999):06d}"
+        boyname = r.data['boyname']
+        phone = r.data['phone']
+        address = r.data['address']
+        code = UserDetails.objects.get(user=r.user).code
+        try:
+            while DeliveryBoyDetalis.objects.filter(boy_code=boycode).exists():
+                boycode = f"B{random.randint(1, 999999):06d}"
+            DeliveryBoyDetalis.objects.create(boy_code=boycode,name=boyname,phone_number=phone,address=address,code=code)
+            return Response({"status":"success"},status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print(e)
+            return Response({"status":"error"},status=status.HTTP_400_BAD_REQUEST)
+
+class AddAreas(APIView):
+    def post(self, r):
+        area = r.data['area']
+        area_code = f"A{random.randint(1,999999):06d}"
+        code = UserDetails.objects.get(user=r.user).code
+        try:
+            while Locations.objects.filter(area_code=area_code).exists():
+                area_code = f"A{random.randint(1, 999999):06d}"
+            Locations.objects.create(code=code,location=area,location_code=area_code)
+            return Response({"status":"success"},status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print(e)
+            return Response({"status":"error"},status=status.HTTP_400_BAD_REQUEST)
 
 def upload_file(file,drsno):
 
@@ -156,7 +183,7 @@ def upload_file(file,drsno):
     print(upload_result["secure_url"])
 
     # Optimize delivery by resizing and applying auto-format and auto-quality
-    optimize_url, _ = cloudinary_url("shoes", fetch_format="auto", quality="auto")
+    optimize_url, _ = cloudinary_url(upload_result["secure_url"], fetch_format="auto", quality="auto")
     print(optimize_url)
 
     return optimize_url
