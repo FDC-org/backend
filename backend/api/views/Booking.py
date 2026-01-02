@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from backend.api.models import UserDetails, BookingDetails
+from ..models import UserDetails, BookingDetails
 
 
 class Booking(APIView):
