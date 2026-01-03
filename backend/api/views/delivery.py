@@ -145,7 +145,7 @@ class AddDeliveryBoys(APIView):
         try:
             if DeliveryBoyDetalis.objects.filter(code=code).exists():
                 for i in DeliveryBoyDetalis.objects.filter(code=code):
-                    data.append({'boy_code':i.boy_code,'name':i.name})
+                    data.append({'boy_code':i.boy_code,'name':i.name,"phone_number":i.phone_number})
                 return Response({"status":"success","data":data},status=status.HTTP_200_OK)
         except Exception as e:
             print(e)
