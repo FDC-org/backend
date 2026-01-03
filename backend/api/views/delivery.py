@@ -182,7 +182,7 @@ class AddAreas(APIView):
         area_code = f"A{random.randint(1,999999):06d}"
         code = UserDetails.objects.get(user=r.user).code
         try:
-            while Locations.objects.filter(area_code=area_code).exists():
+            while Locations.objects.filter(location_code=area_code).exists():
                 area_code = f"A{random.randint(1, 999999):06d}"
             Locations.objects.create(code=code,location=area,location_code=area_code)
             return Response({"status":"success"},status=status.HTTP_201_CREATED)
