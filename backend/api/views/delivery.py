@@ -139,6 +139,17 @@ class getDeliveryBoys_locations(APIView):
 
 
 class AddDeliveryBoys(APIView):
+    def get(self,r):
+        code = UserDetails.objects.get(user = r.user).code
+        data =[]
+        try:
+            if DeliveryBoyDetalis.objects.filter(code=code).exists():
+                for i in DeliveryBoyDetalis.objects.filter(code=code):
+                    data.append({'boy_code':i.boy_code,'name':i.name})
+                return Response({"status":"success","data":data},status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response({"status":"error"},status=status.HTTP_400_BAD_REQUEST)
     def post(self, r):
         boycode = f"B{random.randint(1,999999):06d}"
         boyname = r.data['boyname']
@@ -155,6 +166,17 @@ class AddDeliveryBoys(APIView):
             return Response({"status":"error"},status=status.HTTP_400_BAD_REQUEST)
 
 class AddAreas(APIView):
+    def get(self,r):
+        code = UserDetails.objects.get(user=r.user).code
+        data = []
+        try:
+            if Locations.objects.filter(code=code).exists():
+                for i in Locations.objects.filter(code=code):
+                    data.append({'area_code': i.location_code, 'area': i.location})
+                return Response({"status": "success", "data": data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response({"status": "error"}, status=status.HTTP_400_BAD_REQUEST)
     def post(self, r):
         area = r.data['area']
         area_code = f"A{random.randint(1,999999):06d}"

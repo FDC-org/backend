@@ -64,7 +64,7 @@ class BranchDetails(models.Model):
 class DeliveryBoyDetalis(models.Model):
     boy_code = models.CharField(max_length=10, primary_key=True)
     name = models.CharField(max_length=20)
-    address = models.TextField()
+    address = models.TextField(blank=True)
     phone_number = models.CharField(max_length=10)
     code = models.CharField(max_length=20)
 
@@ -137,19 +137,19 @@ class deliverdordrs(models.Model):
 
 class BookingDetails(models.Model):
     awbno = models.CharField(max_length=10)
-    doc_type = models.CharField(max_length=10,blank=True)
-    pcs = models.IntegerField(blank=True)
-    wt = models.DecimalField(decimal_places=3, max_digits=5,blank=True)
+    doc_type = models.CharField(max_length=10)
+    pcs = models.IntegerField()
+    wt = models.DecimalField(decimal_places=3, max_digits=5)
     sendername = models.CharField(max_length=50,blank=True)
     senderaddress = models.TextField(blank=True)
     senderphonenumber = models.CharField(max_length=10,blank=True)
     recievername = models.CharField(max_length=50,blank=True)
     recieveraddress = models.TextField(blank=True)
     recieverphonenumber = models.CharField(max_length=10,blank=True)
-    destination_code = models.CharField(max_length=50,blank=True)
+    destination_code = models.CharField(max_length=50)
     mode = models.CharField(max_length=20,blank=True)
-    date = models.DateTimeField(blank=True)
-    booked_code = models.CharField(max_length=20,blank=True)
+    date = models.DateTimeField()
+    booked_code = models.CharField(max_length=20)
     contents = models.TextField(blank=True)
     pincode = models.CharField(max_length=10,blank=True)
 
