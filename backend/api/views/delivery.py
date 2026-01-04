@@ -39,7 +39,7 @@ class DRSapi(APIView):
                     name = adata[0].recievername
                 awbdata.append({"awbno":awbno.awbno,"status":s,"pcs":pcs,"wt":wt,"receiver_name":name})
             data.append({"date": i.date,"drsno":i.drsno,"boy":DeliveryBoyDetalis.objects.get(boy_code=i.boycode).name,
-                             "location":Locations.objects.get(location_code=i.location),"awbdata":awbdata})
+                             "location":Locations.objects.get(location_code=i.location).location,"awbdata":awbdata})
         return Response({"status":"success","data":data},status=status.HTTP_200_OK)
 
 
