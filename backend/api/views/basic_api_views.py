@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..models import UserDetails, BookingDetails_temp, HubDetails, Vehicle_Details, InscanModel, OutscanModel, \
-    ManifestDetails, BranchDetails, BookingDetails,version
+    ManifestDetails, BranchDetails, BookingDetails, AppRelease
 
 
 class UseDetails(APIView):
@@ -139,6 +139,8 @@ class Track(APIView):
 class VersionAPI(APIView):
     def get(self, r):
         try:
-            return Response({"status": "success",'version':version.objects.all()[0].version})
+            release = AppRelease.objects.order_by('-created_at').first()
+            return Response({"status": "success",'version':release.version,"fileid":release.file_id})
         except Exception as e:
+            print(e)
             return Response({'status': 'error'})
