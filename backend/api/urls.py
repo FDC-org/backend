@@ -10,6 +10,7 @@ urlpatterns = [
     path('login/', user.Login.as_view()),
     path('d/', views.Dashboard.as_view()),
     path('csrf/', user.csrf_token),
+    path('getversion/',basic_api_views.VersionAPI.as_view()),
 
     # basic api
     path('userdetails/', basic_api_views.UseDetails.as_view()),
