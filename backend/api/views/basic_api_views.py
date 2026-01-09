@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..models import UserDetails, BookingDetails_temp, HubDetails, Vehicle_Details, InscanModel, OutscanModel, \
-    ManifestDetails, BranchDetails, BookingDetails
+    ManifestDetails, BranchDetails, BookingDetails,version
 
 
 class UseDetails(APIView):
@@ -135,3 +135,10 @@ class Track(APIView):
             print(e)
             return Response({'status': 'error'})
 
+
+class VersionAPI(APIView):
+    def get(self, r):
+        try:
+            return Response({"status": "success",'version':version.objects.all()[0].version})
+        except Exception as e:
+            return Response({'status': 'error'})

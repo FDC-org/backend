@@ -28,8 +28,8 @@ class UserDetails(models.Model):
     lastname = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=10)
     code_name = models.CharField(max_length=30)
-    manifestnumber = models.CharField(max_length=20,default=timezone.now().strftime('%y')+ "0" + str(code) + "010001")
-    drs_number = models.CharField(max_length=20,default=timezone.now().strftime('%y')+ "0" + str(code) + "020001")
+    manifestnumber = models.CharField(max_length=20,)
+    drs_number = models.CharField(max_length=20,)
 
     def fullname(self):
         return str(self.firstname) + " " + str(self.lastname)
@@ -153,6 +153,8 @@ class BookingDetails(models.Model):
     contents = models.TextField(blank=True)
     pincode = models.CharField(max_length=10,blank=True)
 
+class version(models.Model):
+    version = models.CharField(max_length=10)
 
 # -------------------- ADMIN REGISTRATION --------------------
 
