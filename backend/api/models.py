@@ -153,8 +153,15 @@ class BookingDetails(models.Model):
     contents = models.TextField(blank=True)
     pincode = models.CharField(max_length=10,blank=True)
 
-class version(models.Model):
-    version = models.CharField(max_length=10)
+class AppRelease(models.Model):
+    version = models.CharField(max_length=20)
+    remarks = models.TextField(blank=True)
+    build = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    file_id = models.TextField()
+    class Meta:
+        ordering = ['-created_at']
+
 
 # -------------------- ADMIN REGISTRATION --------------------
 
