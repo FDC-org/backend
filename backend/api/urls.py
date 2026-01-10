@@ -37,6 +37,7 @@ urlpatterns = [
     path('outscan/<slug:date>', outscan.OutScan.as_view()),
     path('outscan/', outscan.OutScan.as_view()),
     path('outscanmobile/', outscan.OutScanMobile.as_view()),
+    path('outscanmobile/<slug:date>', outscan.OutScanMobile.as_view()),
     path('manifestdata/<slug:manifest_number>', outscan.ManifestData.as_view()),
 
     path('drs/<slug:date>',DRSapi.as_view()),
