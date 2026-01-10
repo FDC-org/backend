@@ -4,6 +4,8 @@ from django.utils.timezone import make_aware
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from sympy.parsing.sympy_parser import null
+
 from ..models import UserDetails, OutscanModel, ManifestDetails, Vehicle_Details, BookingDetails_temp, BookingDetails
 
 
@@ -57,13 +59,13 @@ class OutScanMobile(APIView):
         manifesstdata = ManifestDetails.objects.filter(inscaned_branch_code=UserDetails.objects.get(user=r.user).code,
                                                        date__date=date)
         data = []
+
         for i in manifesstdata:
             vehicle_num = ""
-            if i.vehicle_number.vehiclenumber:
+            if i.vehicle_number:
                 vehicle_num = i.vehicle_number.vehiclenumber
             data.append({"date": i.date, "manifestnumber": i.manifestnumber,
-                         "tohub": UserDetails.objects.get(code=i.tohub_branch_code).code_name,
-                         "vehicle_number": vehicle_num})
+                         "tohub": UserDetails.objects.get(code=i.tohub_branch_code).code_name,"vehicle_number":vehicle_num})
         return Response({"status": "success", "data": data})
 
     def post(self, r):
@@ -103,10 +105,11 @@ class ManifestData(APIView):
 
         data = []
         manifest_details = ManifestDetails.objects.get(manifestnumber=manifest_number)
+        vehicle_num = manifest_details.vehicle_number.vehiclenumber if manifest_details.vehicle_number.vehiclenumber != null else ""
         for i in OutscanModel.objects.filter(
                 manifestnumber=ManifestDetails.objects.get(manifestnumber=manifest_number)):
             awbdetails = BookingDetails.objects.filter(awbno=i.awbno)
             data.append({"awbno": i.awbno, "pcs": awbdetails[0].pcs, "wt": awbdetails[0].wt})
         return Response({"status": "success", "date": manifest_details.date,
                          "tohub": UserDetails.objects.get(code=manifest_details.tohub_branch_code).code_name,
-                         "vehicle_number": manifest_details.vehicle_number.vehiclenumber, "awbno": data})
+                         "vehicle_number":vehicle_num, "awbno": data})
