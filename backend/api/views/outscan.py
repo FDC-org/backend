@@ -4,7 +4,6 @@ from django.utils.timezone import make_aware
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from sympy.parsing.sympy_parser import null
 
 from ..models import UserDetails, OutscanModel, ManifestDetails, Vehicle_Details, BookingDetails_temp, BookingDetails
 
@@ -105,7 +104,7 @@ class ManifestData(APIView):
 
         data = []
         manifest_details = ManifestDetails.objects.get(manifestnumber=manifest_number)
-        vehicle_num = manifest_details.vehicle_number.vehiclenumber if manifest_details.vehicle_number.vehiclenumber != null else ""
+        vehicle_num = manifest_details.vehicle_number.vehiclenumber if manifest_details.vehicle_number.vehiclenumber else ""
         for i in OutscanModel.objects.filter(
                 manifestnumber=ManifestDetails.objects.get(manifestnumber=manifest_number)):
             awbdetails = BookingDetails.objects.filter(awbno=i.awbno)
