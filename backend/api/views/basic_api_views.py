@@ -12,7 +12,8 @@ from ..models import (
     BookingDetails,
     AppRelease,
     DRS,
-    DeliveryDetails,DrsDetails,
+    DeliveryDetails,
+    DrsDetails,
 )
 
 
@@ -234,7 +235,12 @@ class Track(APIView):
                     }
                 )
             return Response(
-                {"tracking_data": tracking_data, "booking": "none", "status": "success"}
+                {
+                    "tracking_data": tracking_data,
+                    "booking": "none",
+                    "status": "success",
+                    "delivery_data": delivery_data,
+                }
             )
         except Exception as e:
             print(e)
