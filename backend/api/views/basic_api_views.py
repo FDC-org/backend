@@ -208,16 +208,16 @@ class Track(APIView):
             destination = ""
             if booking_details.exists():
                 if HubDetails.objects.filter(
-                    booking_details=booking_details[0].destination_code
+                    hub_code=booking_details[0].destination_code
                 ).exists():
                     destination = HubDetails.objects.get(
-                        booking_details=booking_details[0].destination_code
+                        hub_code=booking_details[0].destination_code
                     ).hubname
                 elif BranchDetails.objects.filter(
-                    booking_details=booking_details[0].destination_code
+                    hub_code=booking_details[0].destination_code
                 ).exists():
                     destination = BranchDetails.objects.get(
-                        booking_details=booking_details[0].destination_code
+                        hub_code=booking_details[0].destination_code
                     ).branchname
                 return Response(
                     {
