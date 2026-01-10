@@ -104,7 +104,7 @@ class ManifestData(APIView):
 
         data = []
         manifest_details = ManifestDetails.objects.get(manifestnumber=manifest_number)
-        vehicle_num = manifest_details.vehicle_number.vehiclenumber if manifest_details.vehicle_number.vehiclenumber else ""
+        vehicle_num = manifest_details.vehicle_number.vehiclenumber if manifest_details.vehicle_number else ""
         for i in OutscanModel.objects.filter(
                 manifestnumber=ManifestDetails.objects.get(manifestnumber=manifest_number)):
             awbdetails = BookingDetails.objects.filter(awbno=i.awbno)
