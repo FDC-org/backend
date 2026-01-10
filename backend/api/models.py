@@ -148,7 +148,7 @@ class BookingDetails(models.Model):
     recieverphonenumber = models.CharField(max_length=10,blank=True)
     destination_code = models.CharField(max_length=50)
     mode = models.CharField(max_length=20,blank=True)
-    date = models.DateTimeField()
+    date = models.DateField()
     booked_code = models.CharField(max_length=20)
     contents = models.TextField(blank=True)
     pincode = models.CharField(max_length=10,blank=True)
