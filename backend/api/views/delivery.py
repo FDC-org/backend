@@ -110,10 +110,10 @@ class Delivered(APIView):
                     statusre = "undelivered" if awbstatus == 'undelivered' else "rto"
                     deliverdordrs.objects.filter(awbno=awb).delete()
                     DeliveryDetails.objects.create(awbno=awb, status=statusre, reason=reason,date=date)
-                    dd = DrsDetails.objects.filter(awbno=awb)
-                    if dd.exists():
-                        dd[0].status = True
-                        dd[0].save()
+                    dd = DrsDetails.objects.filter(awbno=awb).first()
+                    if dd:
+                        dd.status = True
+                        dd.save()
                 else:
                     return Response({"status":"invalid status"}, status=awbstatus.HTTP_400_BAD_REQUEST)
                 return Response({"status":"success",}, status=status.HTTP_201_CREATED)
