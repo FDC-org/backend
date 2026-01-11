@@ -145,6 +145,7 @@ class AddDeliveryBoys(APIView):
                 for i in DeliveryBoyDetalis.objects.filter(code=code):
                     data.append({'boy_code':i.boy_code,'name':i.name,"phone_number":i.phone_number})
                 return Response({"status":"success","data":data},status=status.HTTP_200_OK)
+            return Response({"status":"success","data":data},status=status.HTTP_200_OK)
         except Exception as e:
             print(e)
             return Response({"status":"error"},status=status.HTTP_400_BAD_REQUEST)
@@ -172,6 +173,7 @@ class AddAreas(APIView):
                 for i in Locations.objects.filter(code=code):
                     data.append({'area_code': i.location_code, 'area': i.location})
                 return Response({"status": "success", "data": data}, status=status.HTTP_200_OK)
+            return Response({"status": "success", "data": data}, status=status.HTTP_200_OK)
         except Exception as e:
             print(e)
             return Response({"status": "error"}, status=status.HTTP_400_BAD_REQUEST)
