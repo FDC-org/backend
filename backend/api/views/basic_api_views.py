@@ -215,10 +215,10 @@ class Track(APIView):
                         hub_code=booking_details[0].destination_code
                     ).hubname
                 elif BranchDetails.objects.filter(
-                    hub_code=booking_details[0].destination_code
+                    branch_code=booking_details[0].destination_code
                 ).exists():
                     origin = BranchDetails.objects.get(
-                        hub_code=booking_details[0].destination_code
+                        branch_code=booking_details[0].destination_code
                     ).branchname
                 if HubDetails.objects.filter(
                         hub_code=booking_details[0].booked_code
@@ -227,10 +227,10 @@ class Track(APIView):
                         hub_code=booking_details[0].booked_code
                     ).hubname
                 elif BranchDetails.objects.filter(
-                        hub_code=booking_details[0].booked_code
+                        branch_code=booking_details[0].booked_code
                 ).exists():
                     origin = BranchDetails.objects.get(
-                        hub_code=booking_details[0].booked_code
+                        branch_code=booking_details[0].booked_code
                     ).branchname
                 return Response(
                     {
