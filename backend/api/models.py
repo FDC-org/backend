@@ -46,19 +46,23 @@ class HubDetails(models.Model):
     hub_code = models.CharField(primary_key=True, max_length=20)
     location = models.CharField(max_length=20)
     hubname = models.CharField(max_length=30)
-    pincode = models.CharField(max_length=6)
+    # pincode = models.CharField(max_length=6)
     address = models.TextField()
     phone_number = models.CharField(max_length=10)
+    incharge_name = models.CharField(max_length=20)
+    state = models.CharField(max_length=20)
+    region = models.CharField(max_length=20)
 
 
 class BranchDetails(models.Model):
     branch_code = models.CharField(max_length=10, primary_key=True)
     location = models.CharField(max_length=20)
     branchname = models.CharField(max_length=30)
-    pincode = models.CharField(max_length=6)
+    # pincode = models.CharField(max_length=6)
     address = models.TextField()
     phone_number = models.CharField(max_length=10)
     hub = models.CharField(max_length=20)
+    incharge_name = models.CharField(max_length=20)
 
 
 class DeliveryBoyDetalis(models.Model):
@@ -93,6 +97,7 @@ class DeliveryDetails(models.Model):
 class Pincodes(models.Model):
     code = models.CharField(max_length=20)
     pincode = models.CharField(max_length=6)
+    pincode_type = models.CharField(max_length=20)
 
 
 class Locations(models.Model):
@@ -183,7 +188,7 @@ class UserDetailsAdmin(admin.ModelAdmin):
 
 @admin.register(HubDetails)
 class HubDetailsAdmin(admin.ModelAdmin):
-    list_display = ('hub_code', 'hubname', 'location', 'pincode')
+    list_display = ('hub_code', 'hubname', 'location')
     search_fields = ('hub_code', 'hubname')
 
 
