@@ -9,7 +9,7 @@ from ..models import (
     OutscanModel,
     ManifestDetails,
     Vehicle_Details,
-    BookingDetails,
+    BookingDetails, HubDetails, BranchDetails,
 )
 
 
@@ -111,10 +111,16 @@ class OutScanMobile(APIView):
         date = r.data["date"]
         try:
             dt_naive = datetime.datetime.strptime(date, "%d-%m-%Y, %H:%M:%S")
+            tohubde = HubDetails.objects.filter(hubname=tohub)
+            if tohub.exists():
+                tohub = tohubde[0].hubname
+            tobranchde = BranchDetails.objects.filter(branchname=tohubde)
+            if tobranchde.exists():
+                tohub = tobranchde[0].branch_code
             manifest = ManifestDetails.objects.create(
                 date=dt_naive,
                 inscaned_branch_code=branch_code.code,
-                tohub_branch_code=UserDetails.objects.get(code_name=tohub).code,
+                tohub_branch_code=UserDetails.objects.get(code_name=tohub),
                 manifestnumber=manifest_number,
             )
             for i in awb_no:
