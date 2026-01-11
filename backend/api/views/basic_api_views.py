@@ -231,6 +231,7 @@ class Track(APIView):
                             "recphone": booking_details[0].recieverphonenumber,
                             "destination": destination,
                         },
+                        "delivery_data": delivery_data,
                         "status": "success",
                     }
                 )
