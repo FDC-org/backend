@@ -198,9 +198,9 @@ class Track(APIView):
                         "status": deliverystatus,
                         "deliverydate": deliverydate,
                         "deliveryimage": deliveryimage,
-                        deliveryrecname: deliveryrecname,
+                        "deliveryrecname": deliveryrecname,
                         "deliveryrecphone": deliveryrecphone,
-                        deliveryreason: deliveryreason,
+                        "deliveryreason": deliveryreason,
                     }
                 )
 
@@ -217,7 +217,7 @@ class Track(APIView):
                 elif BranchDetails.objects.filter(
                     branch_code=booking_details[0].destination_code
                 ).exists():
-                    origin = BranchDetails.objects.get(
+                    destination = BranchDetails.objects.get(
                         branch_code=booking_details[0].destination_code
                     ).branchname
                 if HubDetails.objects.filter(
