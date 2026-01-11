@@ -112,7 +112,7 @@ class OutScanMobile(APIView):
         try:
             dt_naive = datetime.datetime.strptime(date, "%d-%m-%Y, %H:%M:%S")
             tohubde = HubDetails.objects.filter(hubname=tohub)
-            if tohub.exists():
+            if tohubde.exists():
                 tohub = tohubde[0].hubname
             tobranchde = BranchDetails.objects.filter(branchname=tohubde)
             if tobranchde.exists():
