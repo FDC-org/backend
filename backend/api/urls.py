@@ -4,6 +4,7 @@ from django.urls import path
 from .views import views, delivery,user,basic_api_views,inscan,outscan
 from .views.Booking import Booking
 from .views.delivery import DRSapi, Delivered
+from .views.onboarding import HubOnbaoard, BranchOnbaoard, UserOnboard
 
 urlpatterns = [
     # user api
@@ -47,5 +48,11 @@ urlpatterns = [
     path('test/', user.test),
     path('adddelboy/',delivery.AddDeliveryBoys.as_view()),
     path('addloc/',delivery.AddAreas.as_view()),
+
+    path('onboard/hub/',HubOnbaoard.as_view()),
+    path('onboard/branch/',BranchOnbaoard.as_view()),
+    # path('viewbranch/',GetBranchDetails.as_view()),
+
+    path('onboard/user/', UserOnboard.as_view()),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
