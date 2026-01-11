@@ -126,7 +126,7 @@ class OutScanMobile(APIView):
                 manifestnumber=manifest_number,
             )
             for i in awb_no:
-                OutscanModel.objects.create(awbno=i, manifestnumber=manifest.manifestnumber)
+                OutscanModel.objects.create(awbno=i, manifestnumber=manifest)
             branch_code.manifestnumber = str(int(branch_code.manifestnumber) + 1)
             branch_code.save()
             return Response(
