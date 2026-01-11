@@ -100,10 +100,10 @@ class Delivered(APIView):
                     date = r.data['date']
                     image_url  = upload_file(image,str(uuid.uuid4().hex))
                     DeliveryDetails.objects.create(awbno = awb,status = 'delivered',recievername = receivername,image = image_url,recievernumber=receivernumber,date= date)
-                    dd = DrsDetails.objects.filter(awbno=awb)
-                    if dd.exists():
-                        dd[0].status = True
-                        dd[0].save()
+                    dd = DrsDetails.objects.filter(awbno=awb).first()
+                    if dd:
+                        dd.status = True
+                        dd.save()
                 elif awbstatus == 'undelivered' or  awbstatus == 'rto':
                     date = r.data['date']
                     reason = r.data['reason']
