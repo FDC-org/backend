@@ -116,8 +116,8 @@ class OutScanMobile(APIView):
                 tohubde = HubDetails.objects.get(hubname=tohub)
                 tohub = tohubde.hub_code
 
-            if BranchDetails.objects.filter(branchname=tohubde).exists():
-                tobranchde = BranchDetails.objects.get(branchname=tohubde)
+            if BranchDetails.objects.filter(branchname=tohub).exists():
+                tobranchde = BranchDetails.objects.get(branchname=tohub)
                 tohub = tobranchde.branch_code
             manifest = ManifestDetails.objects.create(
                 date=dt_naive,
