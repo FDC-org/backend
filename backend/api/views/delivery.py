@@ -90,9 +90,8 @@ class Delivered(APIView):
         try:
             dd = DeliveryDetails.objects.filter(awbno=awbno)
             if  dd.exists():
-                dd[0].status = awbstatus
-                dd[0].save()
-                return Response({"status":"success"},status=status.HTTP_201_CREATED)
+                dd[0].delete()
+                # return Response({"status":"success"},status=status.HTTP_201_CREATED)
             if awbstatus == 'delivered':
                 receivername = r.data['receivername']
                 receivernumber = r.data['receivernumber']
