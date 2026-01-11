@@ -203,7 +203,24 @@ class Track(APIView):
                         "deliveryreason": deliveryreason,
                     }
                 )
-
+            elif DeliveryDetails.objects.filter(awbno=awbno).exists():
+                deliverydetails = DeliveryDetails.objects.get(awbno=awbno)
+                deliverystatus = deliverydetails.status
+                deliverydate = deliverydetails.date
+                deliveryimage = deliverydetails.image
+                deliveryreason = deliverydetails.reason
+                deliveryrecname = deliverydetails.recievername
+                deliveryrecphone = deliverydetails.recievernumber
+                delivery_data.append(
+                    {
+                        "status": deliverystatus,
+                        "deliverydate": deliverydate,
+                        "deliveryimage": deliveryimage,
+                        "deliveryrecname": deliveryrecname,
+                        "deliveryrecphone": deliveryrecphone,
+                        "deliveryreason": deliveryreason,
+                    }
+                )
             booking_details = BookingDetails.objects.filter(awbno=awbno)
             destination = ""
             origin = ""
