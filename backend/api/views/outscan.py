@@ -111,12 +111,14 @@ class OutScanMobile(APIView):
         date = r.data["date"]
         try:
             dt_naive = datetime.datetime.strptime(date, "%d-%m-%Y, %H:%M:%S")
-            tohubde = HubDetails.objects.filter(hubname=tohub)
-            if tohubde.exists():
-                tohub = tohubde[0].hubname
-            tobranchde = BranchDetails.objects.filter(branchname=tohubde)
-            if tobranchde.exists():
-                tohub = tobranchde[0].branch_code
+
+            if HubDetails.objects.filter(hubname=tohub).exists():
+                tohubde = HubDetails.objects.get(hubname=tohub)
+                tohub = tohubde.hub_code
+
+            if BranchDetails.objects.filter(branchname=tohubde).exists():
+                tobranchde = BranchDetails.objects.get(branchname=tohubde)
+                tohub = tobranchde.branch_code
             manifest = ManifestDetails.objects.create(
                 date=dt_naive,
                 inscaned_branch_code=branch_code.code,
