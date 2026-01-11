@@ -122,7 +122,7 @@ class OutScanMobile(APIView):
             manifest = ManifestDetails.objects.create(
                 date=dt_naive,
                 inscaned_branch_code=branch_code.code,
-                tohub_branch_code=UserDetails.objects.get(code_name=tohub).code,
+                tohub_branch_code=UserDetails.objects.get(code=tohub).code,
                 manifestnumber=manifest_number,
             )
             for i in awb_no:
