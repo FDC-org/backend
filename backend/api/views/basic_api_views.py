@@ -184,7 +184,7 @@ class Track(APIView):
                 deliveryrecname = ""
                 deliveryrecphone = ""
                 if drs_details[0].status:
-                    deliverydetails = DeliveryDetails.objects.get(drsno=drsno.drsno)
+                    deliverydetails = DeliveryDetails.objects.get(awbno=awbno)
                     deliverystatus = deliverydetails.status
                     deliverydate = deliverydetails.date
                     deliveryimage = deliverydetails.image
