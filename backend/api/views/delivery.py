@@ -88,36 +88,35 @@ class Delivered(APIView):
             return Response({"status":"invalid awbno"},status=status.HTTP_400_BAD_REQUEST)
         awbstatus = r.data['status'].strip().lower()
         try:
-            dd = DeliveryDetails.objects.filter(awbno=awbno)
-            if  dd.exists():
-                dd[0].delete()
-                # return Response({"status":"success"},status=status.HTTP_201_CREATED)
-            if awbstatus == 'delivered':
-                receivername = r.data['receivername']
-                receivernumber = r.data['receivernumber']
-                image = r.FILES.get('image')
-                date = r.data['date']
-                for awb in awbno:
+            for awb in awbno:
+                dd = DeliveryDetails.objects.filter(awbno=awb)
+                if  dd.exists():
+                    if dd[0].status =='delivered':
+                        return Response({"status":"already delivered"},status=status.HTTP_201_CREATED)
+                if awbstatus == 'delivered':
+                    receivername = r.data['receivername']
+                    receivernumber = r.data['receivernumber']
+                    image = r.FILES.get('image')
+                    date = r.data['date']
                     image_url  = upload_file(image,str(uuid.uuid4().hex))
                     DeliveryDetails.objects.create(awbno = awb,status = 'delivered',recievername = receivername,image = image_url,recievernumber=receivernumber,date= date)
-                    dd = DrsDetails.objects.filter(awbno=awbno)
+                    dd = DrsDetails.objects.filter(awbno=awb)
                     if dd.exists():
                         dd[0].status = True
                         dd[0].save()
-            elif awbstatus == 'undelivered' or  awbstatus == 'rto':
-                date = r.data['date']
-                reason = r.data['reason']
-                statusre = "undelivered" if awbstatus == 'undelivered' else "rto"
-                for awb in awbno:
+                elif awbstatus == 'undelivered' or  awbstatus == 'rto':
+                    date = r.data['date']
+                    reason = r.data['reason']
+                    statusre = "undelivered" if awbstatus == 'undelivered' else "rto"
                     deliverdordrs.objects.filter(awbno=awb).delete()
                     DeliveryDetails.objects.create(awbno=awb, status=statusre, reason=reason,date=date)
-                    dd = DrsDetails.objects.filter(awbno=awbno)
+                    dd = DrsDetails.objects.filter(awbno=awb)
                     if dd.exists():
                         dd[0].status = True
                         dd[0].save()
-            else:
-                return Response({"status":"invalid status"}, status=awbstatus.HTTP_400_BAD_REQUEST)
-            return Response({"status":"success",}, status=status.HTTP_201_CREATED)
+                else:
+                    return Response({"status":"invalid status"}, status=awbstatus.HTTP_400_BAD_REQUEST)
+                return Response({"status":"success",}, status=status.HTTP_201_CREATED)
         except Exception as e:
             print(e)
             DeliveryDetails.objects.filter(awbno=awbno).delete()
