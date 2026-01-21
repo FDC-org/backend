@@ -1,6 +1,8 @@
+import datetime
+
 from django.contrib.auth import authenticate
 from django.http import JsonResponse
-from django.middleware.csrf import get_token
+
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -32,3 +34,4 @@ def csrf_token(r):
 
 def test(r):
     return JsonResponse({'status': "test"})
+

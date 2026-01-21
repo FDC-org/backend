@@ -1,11 +1,10 @@
-import datetime
-import time
 import uuid
-from xmlrpc.client import DateTime
 
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
+
+from .views.utils import token_expiry
 
 
 # Create your models here.
@@ -14,7 +13,7 @@ class CustomTokenModel(models.Model):
     token = models.UUIDField(default=uuid.uuid4, unique=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='custom_token')
     created_at = models.DateTimeField(auto_now_add=True)
-    expired_at = models.DateTimeField(default=timezone.now() + datetime.timedelta(days=5))
+    expired_at = models.DateTimeField(default=token_expiry)
 
     def is_expired(self):
         return timezone.now() >= self.expired_at
