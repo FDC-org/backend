@@ -1,13 +1,10 @@
-import datetime
-import time
 import uuid
-from xmlrpc.client import DateTime
 
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 
-from .views.user import token_expiry
+from .views.utils import token_expiry
 
 
 # Create your models here.
