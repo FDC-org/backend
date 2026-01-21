@@ -1,6 +1,9 @@
+import datetime
+
 from django.contrib.auth import authenticate
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -32,3 +35,8 @@ def csrf_token(r):
 
 def test(r):
     return JsonResponse({'status': "test"})
+
+
+
+def token_expiry():
+    return timezone.now() + datetime.timedelta(days=5)
