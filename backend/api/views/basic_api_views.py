@@ -184,7 +184,8 @@ class Track(APIView):
                 deliveryrecname = ""
                 deliveryrecphone = ""
                 if drs_details[0].status:
-                    deliverydetails = DeliveryDetails.objects.get(awbno=awbno)
+                    deliverydetails = DeliveryDetails.objects.filter(awbno=awbno).last()
+                    print(deliverydetails.date)
                     deliverystatus = deliverydetails.status
                     deliverydate = deliverydetails.date
                     deliveryimage = deliverydetails.image
@@ -204,7 +205,7 @@ class Track(APIView):
                     }
                 )
             elif DeliveryDetails.objects.filter(awbno=awbno).exists():
-                deliverydetails = DeliveryDetails.objects.get(awbno=awbno)
+                deliverydetails = DeliveryDetails.objects.filter(awbno=awbno).latest("date")
                 deliverystatus = deliverydetails.status
                 deliverydate = deliverydetails.date
                 deliveryimage = deliverydetails.image
