@@ -27,7 +27,7 @@ urlpatterns = [
     # booking
 
     path('booking/',Booking.as_view()),
-
+    path('booking/<slug:date>', Booking.as_view()),
 
     # inscan
     path('inscan/', inscan.Inscan.as_view()),

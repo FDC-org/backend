@@ -1,3 +1,5 @@
+import json
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -14,6 +16,7 @@ from ..models import (
     DRS,
     DeliveryDetails,
     DrsDetails,
+CustomTokenModel
 )
 
 
@@ -44,7 +47,7 @@ class UseDetails(APIView):
 
 class GetBookingDetails(APIView):
     def post(self, r):
-        details = BookingDetails_temp.objects.filter(awbno=r.data["awbno"])
+        details = BookingDetails.objects.filter(awbno=r.data["awbno"])
         if details:
             return Response(
                 {
@@ -116,12 +119,21 @@ class VehicleDetails(APIView):
 
 class VerifyToken(APIView):
     def get(self, r):
+        # try:
+        #     if r.new_token != 'none':
+        #         return Response({"new_token": r.new_token, "status": "new_token"})
+        #     return Response({"status": "valid"})
+        # except:
+        #     return Response({"status": "invalid"})
         try:
-            if r.new_token:
-                return Response({"new_token": r.new_token, "status": "new_token"})
-            return Response({"status": "valid"})
-        except:
+            token = CustomTokenModel.objects.get(user=r.user).token
+            if token:
+                return Response({"status": "valid"})
+            else:
+                return Response({"status": "invalid"})
+        except Exception as e:
             return Response({"status": "invalid"})
+
 
 
 class Track(APIView):
