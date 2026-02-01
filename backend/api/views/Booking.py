@@ -1,12 +1,69 @@
+from django.core.paginator import Paginator
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..models import UserDetails, BookingDetails
+from ..models import UserDetails, BookingDetails,HubDetails,BranchDetails
 
 
 class Booking(APIView):
-    def get(self,request):
-        return Response({"status":"ok"})
+    def get(self, request,date):
+        if not date:
+            return Response(
+                {"error": "date required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user_code = UserDetails.objects.get(user=request.user).code
+
+            bookings = BookingDetails.objects.filter(
+                booked_code=user_code,
+                date=date
+            ).order_by('-date')
+
+            # 🔥 Optimize destination lookup
+            hub_map = {
+                h.hub_code: h.hubname
+                for h in HubDetails.objects.all()
+            }
+
+            branch_map = {
+                b.branch_code: b.branchname
+                for b in BranchDetails.objects.all()
+            }
+
+            data = []
+
+            for i in bookings:
+                destination_name = (
+                        hub_map.get(i.destination_code)
+                        or branch_map.get(i.destination_code)
+                        or ""
+                )
+
+                data.append({
+                    "awbno": i.awbno,
+                    "date": i.date.strftime("%d-%m-%Y"),
+                    "sender": i.sendername,
+                    "receiver": i.recievername,
+                    "destination": destination_name,
+                    "doc_type": i.doc_type,
+                    "wt": i.wt,
+                    "pcs": i.pcs,
+                })
+
+            return Response({
+                "status": "success",
+                "count": len(data),
+                "data": data
+            })
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     def post(self,request):
         awbno = request.data['awbno']
