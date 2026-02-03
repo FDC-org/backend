@@ -47,7 +47,15 @@ class OutScan(APIView):
         tohub = r.data["tohub"]
         branch_code = UserDetails.objects.get(user=r.user)
         date = r.data["date"]
+
         try:
+            if HubDetails.objects.filter(hubname=tohub).exists():
+                tohubde = HubDetails.objects.get(hubname=tohub)
+                tohub = tohubde.hub_code
+
+            elif BranchDetails.objects.filter(branchname=tohub).exists():
+                tobranchde = BranchDetails.objects.get(branchname=tohub)
+                tohub = tobranchde.branch_code
             dt_naive = datetime.datetime.strptime(date, "%d-%m-%Y, %H:%M:%S")
             manifest = ManifestDetails.objects.create(
                 date=dt_naive,
@@ -103,6 +111,7 @@ class OutScanMobile(APIView):
         return Response({"status": "success", "data": data})
 
     def post(self, r):
+        print(r.data)
         awb_no = r.data["awbno"]
         manifest_number = r.data["manifest_number"]
         # vehicle_number = r.data['vehicle_number']
