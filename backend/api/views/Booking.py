@@ -82,6 +82,7 @@ class Booking(APIView):
         booked_code = UserDetails.objects.get(user=request.user).code
         contents = request.data['contents']
         pincode = request.data['pincode']
+        reference_no = request.data['reference']
         if BookingDetails.objects.filter(awbno=awbno).exists():
             return Response({"status":"exists"})
         try:
@@ -90,7 +91,7 @@ class Booking(APIView):
                                           recieveraddress=receiveraddress,senderphonenumber=senderphone,
                                           recieverphonenumber=receiverphone,doc_type=doc_type,
                                           destination_code=destination_code,mode=mode,date=date,
-                                          booked_code=booked_code,contents=contents,pincode=pincode)
+                                          booked_code=booked_code,contents=contents,pincode=pincode,refernce_no=reference_no)
             return Response({"status":"success"})
         except Exception as e:
             print(e)

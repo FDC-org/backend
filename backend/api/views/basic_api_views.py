@@ -136,11 +136,191 @@ class VerifyToken(APIView):
 
 
 
+# class Track(APIView):
+#     def get(self, r, awbno):
+#         if not awbno:
+#             return Response({"status": "AWB no required"})
+#         try:
+#             tracking_data = []
+#             inscans = InscanModel.objects.filter(awbno=awbno)
+#             if inscans:
+#                 for inscan in inscans:
+#                     tracking_data.append(
+#                         {
+#                             "awbno": inscan.awbno,
+#                             "event": "Inscan",
+#                             "location": UserDetails.objects.get(
+#                                 code=inscan.inscaned_branch_code
+#                             ).code_name,
+#                             "date": inscan.date,
+#                             "branch_type": UserDetails.objects.get(
+#                                 code=inscan.inscaned_branch_code
+#                             ).type,
+#                         }
+#                     )
+#             outscans = OutscanModel.objects.filter(awbno=awbno).select_related(
+#                 "manifestnumber__vehicle_number"
+#             )
+#             if outscans:
+#                 for outscan in outscans:
+#                     manifest = outscan.manifestnumber
+#                     tracking_data.append(
+#                         {
+#                             "awbno": outscan.awbno,
+#                             "event": "Outscan",
+#                             "location": UserDetails.objects.get(
+#                                 code=manifest.inscaned_branch_code
+#                             ).code_name,
+#                             "date": manifest.date,
+#                             "branch_type": UserDetails.objects.get(
+#                                 code=manifest.inscaned_branch_code
+#                             ).type,
+#                             "tohub": UserDetails.objects.get(
+#                                 code=manifest.tohub_branch_code
+#                             ).code_name,
+#                         }
+#                     )
+#
+#             tracking_data.sort(key=lambda x: x["date"])
+#             delivery_data = []
+#             drsdata = []
+#             drs_details = DrsDetails.objects.filter(awbno=awbno)
+#             if drs_details.exists():
+#                 drsno = DRS.objects.get(drsno=drs_details[0].drsno)
+#                 drs_date = drsno.date
+#                 drsnum = drsno.drsno
+#                 drsdata.append({"date": drs_date, "drsnum": drsnum})
+#                 deliverydate = ""
+#                 deliveryimage = ""
+#                 deliveryreason = ""
+#                 deliveryrecname = ""
+#                 deliveryrecphone = ""
+#                 if drs_details[0].status:
+#                     deliverydetails = DeliveryDetails.objects.filter(awbno=awbno).last()
+#                     print(deliverydetails.date)
+#                     deliverystatus = deliverydetails.status
+#                     deliverydate = deliverydetails.date
+#                     deliveryimage = deliverydetails.image
+#                     deliveryreason = deliverydetails.reason
+#                     deliveryrecname = deliverydetails.recievername
+#                     deliveryrecphone = deliverydetails.recievernumber
+#                 else:
+#                     deliverystatus = "ofd"
+#                 delivery_data.append(
+#                     {
+#                         "status": deliverystatus,
+#                         "deliverydate": deliverydate,
+#                         "deliveryimage": deliveryimage,
+#                         "deliveryrecname": deliveryrecname,
+#                         "deliveryrecphone": deliveryrecphone,
+#                         "deliveryreason": deliveryreason,
+#                     }
+#                 )
+#             elif DeliveryDetails.objects.filter(awbno=awbno).exists():
+#                 deliverydetails = DeliveryDetails.objects.filter(awbno=awbno).latest("date")
+#                 deliverystatus = deliverydetails.status
+#                 deliverydate = deliverydetails.date
+#                 deliveryimage = deliverydetails.image
+#                 deliveryreason = deliverydetails.reason
+#                 deliveryrecname = deliverydetails.recievername
+#                 deliveryrecphone = deliverydetails.recievernumber
+#                 delivery_data.append(
+#                     {
+#                         "status": deliverystatus,
+#                         "deliverydate": deliverydate,
+#                         "deliveryimage": deliveryimage,
+#                         "deliveryrecname": deliveryrecname,
+#                         "deliveryrecphone": deliveryrecphone,
+#                         "deliveryreason": deliveryreason,
+#                     }
+#                 )
+#             booking_details = BookingDetails.objects.filter(awbno=awbno)
+#             destination = ""
+#             origin = ""
+#             if booking_details.exists():
+#                 if HubDetails.objects.filter(
+#                     hub_code=booking_details[0].destination_code
+#                 ).exists():
+#                     destination = HubDetails.objects.get(
+#                         hub_code=booking_details[0].destination_code
+#                     ).hubname
+#                 elif BranchDetails.objects.filter(
+#                     branch_code=booking_details[0].destination_code
+#                 ).exists():
+#                     destination = BranchDetails.objects.get(
+#                         branch_code=booking_details[0].destination_code
+#                     ).branchname
+#                 if HubDetails.objects.filter(
+#                         hub_code=booking_details[0].booked_code
+#                 ).exists():
+#                     origin = HubDetails.objects.get(
+#                         hub_code=booking_details[0].booked_code
+#                     ).hubname
+#                 elif BranchDetails.objects.filter(
+#                         branch_code=booking_details[0].booked_code
+#                 ).exists():
+#                     origin = BranchDetails.objects.get(
+#                         branch_code=booking_details[0].booked_code
+#                     ).branchname
+#                 return Response(
+#                     {
+#                         "tracking_data": tracking_data,
+#                         "awbno": awbno,
+#                         "booking": {
+#                             "pcs": booking_details[0].pcs,
+#                             "wt": booking_details[0].wt,
+#                             "recname": booking_details[0].recievername,
+#                             "date": booking_details[0].date,
+#                             "recphone": booking_details[0].recieverphonenumber,
+#                             "destination": destination,
+#                             "booked_hub":origin,
+#                             "sendername":booking_details[0].sendername,
+#                             "senderaddress":booking_details[0].senderaddress,
+#                             "senderphone":booking_details[0].senderphonenumber,
+#                             "recadd":booking_details[0].recieveraddress,
+#                         },
+#                         "delivery_data": delivery_data,
+#                         "status": "success",
+#                     }
+#                 )
+#             return Response(
+#                 {
+#                     "tracking_data": tracking_data,
+#                     "booking": "none",
+#                     "status": "success",
+#                     "delivery_data": delivery_data,
+#                 }
+#             )
+#         except Exception as e:
+#             print(e)
+#             return Response({"status": "error"})
 class Track(APIView):
     def get(self, r, awbno):
         if not awbno:
-            return Response({"status": "AWB no required"})
+            return Response({"status": "AWB no or Reference no required"})
         try:
+            # Try to find booking by AWB number first
+            awb_ref = ""
+            booking_details = BookingDetails.objects.filter(awbno=awbno)
+
+            # If not found by AWB, try to find by reference number
+            if not booking_details.exists():
+                booking_details = BookingDetails.objects.filter(refernce_no=awbno)
+
+                # If found by reference, get the actual AWB number
+                if booking_details.exists():
+                    awb_ref = awbno
+                    awbno = booking_details[0].awbno
+
+                else:
+                    # No booking found by either AWB or reference
+                    return Response({
+                        "status": "error",
+                        "message": "No tracking data found for this AWB/Reference number"
+                    })
+            else:
+                awb_ref = booking_details[0].refernce_no
+            # Now proceed with tracking using the actual AWB number
             tracking_data = []
             inscans = InscanModel.objects.filter(awbno=awbno)
             if inscans:
@@ -234,18 +414,18 @@ class Track(APIView):
                         "deliveryreason": deliveryreason,
                     }
                 )
-            booking_details = BookingDetails.objects.filter(awbno=awbno)
+
             destination = ""
             origin = ""
             if booking_details.exists():
                 if HubDetails.objects.filter(
-                    hub_code=booking_details[0].destination_code
+                        hub_code=booking_details[0].destination_code
                 ).exists():
                     destination = HubDetails.objects.get(
                         hub_code=booking_details[0].destination_code
                     ).hubname
                 elif BranchDetails.objects.filter(
-                    branch_code=booking_details[0].destination_code
+                        branch_code=booking_details[0].destination_code
                 ).exists():
                     destination = BranchDetails.objects.get(
                         branch_code=booking_details[0].destination_code
@@ -265,6 +445,7 @@ class Track(APIView):
                 return Response(
                     {
                         "tracking_data": tracking_data,
+                        'reference_no':awb_ref,
                         "awbno": awbno,
                         "booking": {
                             "pcs": booking_details[0].pcs,
@@ -273,11 +454,13 @@ class Track(APIView):
                             "date": booking_details[0].date,
                             "recphone": booking_details[0].recieverphonenumber,
                             "destination": destination,
-                            "booked_hub":origin,
-                            "sendername":booking_details[0].sendername,
-                            "senderaddress":booking_details[0].senderaddress,
-                            "senderphone":booking_details[0].senderphonenumber,
-                            "recadd":booking_details[0].recieveraddress,
+                            "booked_hub": origin,
+                            "sendername": booking_details[0].sendername,
+                            "senderaddress": booking_details[0].senderaddress,
+                            "senderphone": booking_details[0].senderphonenumber,
+                            "recadd": booking_details[0].recieveraddress,
+                            "reference": booking_details[0].refernce_no if hasattr(booking_details[0],
+                                                                                 'refernce_no') else "",
                         },
                         "delivery_data": delivery_data,
                         "status": "success",
@@ -286,6 +469,7 @@ class Track(APIView):
             return Response(
                 {
                     "tracking_data": tracking_data,
+                    'awbno': awbno,
                     "booking": "none",
                     "status": "success",
                     "delivery_data": delivery_data,
@@ -293,7 +477,7 @@ class Track(APIView):
             )
         except Exception as e:
             print(e)
-            return Response({"status": "error"})
+            return Response({"status": "error", "message": str(e)})
 
 
 class VersionAPI(APIView):

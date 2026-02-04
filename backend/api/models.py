@@ -156,6 +156,7 @@ class BookingDetails(models.Model):
     booked_code = models.CharField(max_length=20)
     contents = models.TextField(blank=True)
     pincode = models.CharField(max_length=10,blank=True)
+    refernce_no = models.CharField(max_length=20,default="")
 
 class AppRelease(models.Model):
     version = models.CharField(max_length=20)
