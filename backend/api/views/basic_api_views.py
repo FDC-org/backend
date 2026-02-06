@@ -145,6 +145,7 @@ class Track(APIView):
             awb_ref = ""
             is_child_piece = False
             parent_awb = None
+            search_awb = awbno  # AWB to use for tracking/delivery queries
 
             booking_details = BookingDetails.objects.filter(awbno=awbno)
 
@@ -154,15 +155,16 @@ class Track(APIView):
                 if child_piece:
                     is_child_piece = True
                     parent_awb = child_piece.awbno
-                    awbno = child_piece.awbno
-                    booking_details = BookingDetails.objects.filter(awbno=awbno)
+                    search_awb = awbno  # Use child number for tracking/delivery
+                    # Get parent booking details
+                    booking_details = BookingDetails.objects.filter(awbno=parent_awb)
                 else:
                     # Try to find by reference number
                     booking_details = BookingDetails.objects.filter(refernce_no=awbno)
 
                     if booking_details.exists():
                         awb_ref = awbno
-                        awbno = booking_details[0].awbno
+                        search_awb = booking_details[0].awbno
                     else:
                         return Response({
                             "status": "error",
@@ -171,17 +173,17 @@ class Track(APIView):
             else:
                 awb_ref = booking_details[0].refernce_no
 
-            # Get child pieces if exists
+            # Get child pieces if exists (from parent AWB)
             child_pieces = []
             if booking_details.exists() and int(booking_details[0].pcs) > 1:
                 child_pieces = list(
-                    ChildPieceDetails.objects.filter(awbno=awbno)
+                    ChildPieceDetails.objects.filter(awbno=booking_details[0].awbno)
                     .values('child_no')
                 )
 
-            # Tracking data collection (existing code)
+            # Tracking data collection - USE search_awb (child number if tracking child)
             tracking_data = []
-            inscans = InscanModel.objects.filter(awbno=awbno)
+            inscans = InscanModel.objects.filter(awbno=search_awb)
             if inscans:
                 for inscan in inscans:
                     tracking_data.append({
@@ -196,7 +198,7 @@ class Track(APIView):
                         ).type,
                     })
 
-            outscans = OutscanModel.objects.filter(awbno=awbno).select_related(
+            outscans = OutscanModel.objects.filter(awbno=search_awb).select_related(
                 "manifestnumber__vehicle_number"
             )
             if outscans:
@@ -219,9 +221,9 @@ class Track(APIView):
 
             tracking_data.sort(key=lambda x: x["date"])
 
-            # Delivery data (existing code)
+            # Delivery data - USE search_awb (child number if tracking child)
             delivery_data = []
-            drs_details = DrsDetails.objects.filter(awbno=awbno)
+            drs_details = DrsDetails.objects.filter(awbno=search_awb)
             if drs_details.exists():
                 drsno = DRS.objects.get(drsno=drs_details[0].drsno)
                 deliverydate = ""
@@ -231,7 +233,7 @@ class Track(APIView):
                 deliveryrecphone = ""
 
                 if drs_details[0].status:
-                    deliverydetails = DeliveryDetails.objects.filter(awbno=awbno).last()
+                    deliverydetails = DeliveryDetails.objects.filter(awbno=search_awb).last()
                     deliverystatus = deliverydetails.status
                     deliverydate = deliverydetails.date
                     deliveryimage = deliverydetails.image
@@ -249,8 +251,8 @@ class Track(APIView):
                     "deliveryrecphone": deliveryrecphone,
                     "deliveryreason": deliveryreason,
                 })
-            elif DeliveryDetails.objects.filter(awbno=awbno).exists():
-                deliverydetails = DeliveryDetails.objects.filter(awbno=awbno).latest("date")
+            elif DeliveryDetails.objects.filter(awbno=search_awb).exists():
+                deliverydetails = DeliveryDetails.objects.filter(awbno=search_awb).latest("date")
                 delivery_data.append({
                     "status": deliverydetails.status,
                     "deliverydate": deliverydetails.date,
@@ -285,7 +287,7 @@ class Track(APIView):
                 return Response({
                     "tracking_data": tracking_data,
                     "reference_no": awb_ref,
-                    "awbno": awbno,
+                    "awbno": search_awb,  # Return the actual searched AWB (child if tracking child)
                     "is_child_piece": is_child_piece,
                     "parent_awb": parent_awb if is_child_piece else None,
                     "child_pieces": child_pieces,
@@ -312,7 +314,7 @@ class Track(APIView):
 
             return Response({
                 "tracking_data": tracking_data,
-                "awbno": awbno,
+                "awbno": search_awb,
                 "booking": "none",
                 "status": "success",
                 "delivery_data": delivery_data,
