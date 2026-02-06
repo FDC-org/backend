@@ -3,11 +3,11 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..models import UserDetails, BookingDetails,HubDetails,BranchDetails
+from ..models import UserDetails, BookingDetails,HubDetails,BranchDetails,ChildPieceDetails
 
 
 class Booking(APIView):
-    def get(self, request,date):
+    def get(self, request, date):
         if not date:
             return Response(
                 {"error": "date required"},
@@ -22,7 +22,7 @@ class Booking(APIView):
                 date=date
             ).order_by('-date')
 
-            # 🔥 Optimize destination lookup
+            # Optimize destination lookup
             hub_map = {
                 h.hub_code: h.hubname
                 for h in HubDetails.objects.all()
@@ -37,10 +37,18 @@ class Booking(APIView):
 
             for i in bookings:
                 destination_name = (
-                        hub_map.get(i.destination_code)
-                        or branch_map.get(i.destination_code)
-                        or ""
+                    hub_map.get(i.destination_code)
+                    or branch_map.get(i.destination_code)
+                    or ""
                 )
+
+                # Get child pieces if pcs > 1
+                child_pieces = []
+                if int(i.pcs) > 1:
+                    child_pieces = list(
+                        ChildPieceDetails.objects.filter(awbno=i.awbno)
+                        .values_list('child_no', flat=True)
+                    )
 
                 data.append({
                     "awbno": i.awbno,
@@ -51,6 +59,8 @@ class Booking(APIView):
                     "doc_type": i.doc_type,
                     "wt": i.wt,
                     "pcs": i.pcs,
+                    "child_pieces": child_pieces,
+                    "has_children": len(child_pieces) > 0
                 })
 
             return Response({
@@ -60,6 +70,7 @@ class Booking(APIView):
             })
 
         except Exception as e:
+            print(f"ViewBookings error: {e}")
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
@@ -83,6 +94,7 @@ class Booking(APIView):
         contents = request.data['contents']
         pincode = request.data['pincode']
         reference_no = request.data['reference']
+        child_piece = request.data['child_pieces_start']
         if BookingDetails.objects.filter(awbno=awbno).exists():
             return Response({"status":"exists"})
         try:
@@ -92,6 +104,10 @@ class Booking(APIView):
                                           recieverphonenumber=receiverphone,doc_type=doc_type,
                                           destination_code=destination_code,mode=mode,date=date,
                                           booked_code=booked_code,contents=contents,pincode=pincode,refernce_no=reference_no)
+            if int(pcs) > 1:
+                for i in range(int(pcs)-1):
+                    print(i)
+                    ChildPieceDetails.objects.create(awbno=awbno,child_no=str(int(child_piece)+i))
             return Response({"status":"success"})
         except Exception as e:
             print(e)

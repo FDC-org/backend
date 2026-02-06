@@ -158,6 +158,11 @@ class BookingDetails(models.Model):
     pincode = models.CharField(max_length=10,blank=True)
     refernce_no = models.CharField(max_length=20,default="")
 
+class ChildPieceDetails(models.Model):
+    awbno = models.CharField(max_length=10)
+    child_no = models.CharField(max_length=10,unique=True)
+
+
 class AppRelease(models.Model):
     version = models.CharField(max_length=20)
     remarks = models.TextField(blank=True)
