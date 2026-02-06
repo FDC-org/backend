@@ -54,5 +54,6 @@ urlpatterns = [
     # path('viewbranch/',GetBranchDetails.as_view()),
 
     path('onboard/user/', UserOnboard.as_view()),
+    path('user/profile/', basic_api_views.UserProfile.as_view(), name='user-profile'),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
