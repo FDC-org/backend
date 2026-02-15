@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DRS - {{ drs_number }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 10mm;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #000;
+        }
+
+        .company-info {
+            flex: 1;
+        }
+
+        .company-logo {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #c41e3a;
+            margin-bottom: 5px;
+        }
+
+        .company-logo .shree {
+            color: #1e3a8a;
+        }
+
+        .company-tagline {
+            font-size: 9pt;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .branch-name {
+            font-weight: bold;
+            font-size: 12pt;
+            margin-bottom: 3px;
+        }
+
+        .branch-address {
+            font-size: 9pt;
+            color: #333;
+        }
+
+        .drs-barcode {
+            text-align: right;
+        }
+
+        .barcode-image {
+            height: 60px;
+            margin-bottom: 5px;
+        }
+
+        .drs-number {
+            font-size: 10pt;
+            font-weight: bold;
+        }
+
+        .page-number {
+            font-size: 9pt;
+        }
+
+        .drs-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 8px;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+        }
+
+        .drs-details div {
+            font-size: 10pt;
+        }
+
+        .drs-details strong {
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th {
+            background-color: #333;
+            color: white;
+            padding: 8px;
+            text-align: left;
+            font-size: 10pt;
+            border: 1px solid #000;
+        }
+
+        td {
+            padding: 8px;
+            border: 1px solid #000;
+            font-size: 10pt;
+            vertical-align: top;
+        }
+
+        .center-col {
+            width: 15%;
+        }
+
+        .doc-col {
+            width: 25%;
+        }
+
+        .party-col {
+            width: 35%;
+        }
+
+        .signature-col {
+            width: 15%;
+        }
+
+        .serial-col {
+            width: 5%;
+            text-align: center;
+        }
+
+        .awb-barcode {
+            height: 40px;
+            margin: 5px 0;
+        }
+
+        .std-info {
+            font-size: 9pt;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .remarks {
+            font-size: 9pt;
+            font-style: italic;
+            color: #666;
+        }
+
+        .party-details {
+            font-size: 9pt;
+        }
+
+        .party-name {
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            page-break-inside: avoid;
+        }
+
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+        }
+
+        .signature-box {
+            text-align: center;
+            width: 30%;
+        }
+
+        .signature-line {
+            border-top: 1px solid #000;
+            margin-top: 50px;
+            padding-top: 5px;
+            font-size: 10pt;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="company-info">
+            <div class="company-logo">
+                <span style="color: #0b8745;">FDC</span> <span style="color: #1ec477;">Couriers and Cargo</span>
+            </div>
+            <div class="company-tagline">Fast, Reliable, Trusted Delivery Services</div>
+            <div class="branch-name">{{ branch_name }}</div>
+            <div class="branch-address">{{ branch_address }}</div>
+        </div>
+        <div class="drs-barcode">
+            <img src="{{ drs_barcode_url }}" alt="DRS Barcode" class="barcode-image">
+            <div class="drs-number">{{ drs_number }}</div>
+            <div class="page-number">Page: 1</div>
+        </div>
+    </div>
+
+    <div class="drs-details">
+        <div><strong>Date:</strong> {{ date }}</div>
+        <div><strong>Area:</strong> {{ area }}</div>
+        <div><strong>Delivery Boy:</strong> {{ delivery_boy }}</div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="serial-col">#</th>
+                <th class="center-col">Center</th>
+                <th class="doc-col">Doc No</th>
+                <th class="party-col">Party Name</th>
+                <th class="signature-col">Signature</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in awb_items %}
+            <tr>
+                <td class="serial-col">{{ loop.index }}</td>
+                <td>
+                    {{ item.center }}
+                    <div class="std-info">STD: {{ item.doc_type }}</div>
+                    {% if item.remarks %}
+                    <div class="remarks">Remarks: {{ item.remarks }}</div>
+                    {% endif %}
+                </td>
+                <td>
+                    {{ item.awb_number }}
+                    {% if item.awb_barcode_url %}
+                    <img src="{{ item.awb_barcode_url }}" alt="AWB Barcode" class="awb-barcode">
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="party-name">{{ item.party_name }}</div>
+                    <div class="party-details">{{ item.party_phone }}</div>
+                    {% if item.pieces or item.weight %}
+                    <div class="party-details">
+                        Pcs: {{ item.pieces }} | Wt: {{ item.weight }} kg
+                    </div>
+                    {% endif %}
+                </td>
+                <td></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <div class="signature-section">
+            <div class="signature-box">
+                <div class="signature-line">Delivery Boy Signature</div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line">Branch Manager Signature</div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line">Date & Stamp</div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

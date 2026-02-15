@@ -41,6 +41,15 @@ urlpatterns = [
     path('outscanmobile/<slug:date>', outscan.OutScanMobile.as_view()),
     path('manifestdata/<slug:manifest_number>', outscan.ManifestData.as_view()),
 
+    # DRS PDF Download & View (MUST come before generic drs/<date> pattern)
+    path('drs/download/<str:drs_number>/', delivery.DownloadDRSPDF.as_view(), name='drs-download'),
+    path('drs/view/<str:drs_number>/', delivery.ViewDRSPDF.as_view(), name='drs-view'),
+    
+    # Manifest PDF Download & View (MUST come before generic patterns)
+    path('manifest/download/<str:manifest_number>/', outscan.DownloadManifestPDF.as_view(), name='manifest-download'),
+    path('manifest/view/<str:manifest_number>/', outscan.ViewManifestPDF.as_view(), name='manifest-view'),
+    
+    # DRS API
     path('drs/<slug:date>',DRSapi.as_view()),
     path('drs/', DRSapi.as_view()),
     path('delivery/',Delivered.as_view()),
