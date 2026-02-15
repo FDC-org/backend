@@ -77,7 +77,16 @@ class CustomMiddleware:
         if request.method == "OPTIONS":
             return self.get_response(request)
 
-        if request.path.startswith('/api/track/') or request.path.startswith('/api/login/') or request.path.startswith('/api/test/') or request.path.startswith('/api/logout/') or request.path.startswith('/admin/'):
+        # Allow public access to PDF download/view endpoints and other public routes
+        if (request.path.startswith('/api/track/') or 
+            request.path.startswith('/api/login/') or 
+            request.path.startswith('/api/test/') or 
+            request.path.startswith('/api/logout/') or 
+            request.path.startswith('/api/drs/download/') or 
+            request.path.startswith('/api/drs/view/') or 
+            request.path.startswith('/api/manifest/download/') or 
+            request.path.startswith('/api/manifest/view/') or 
+            request.path.startswith('/admin/')):
             return self.get_response(request)
 
         if not auth_header or not auth_header.startswith("Token "):
