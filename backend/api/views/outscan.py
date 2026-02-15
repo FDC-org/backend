@@ -111,10 +111,9 @@ class OutScanMobile(APIView):
         return Response({"status": "success", "data": data})
 
     def post(self, r):
-        print(r.data)
         awb_no = r.data["awbno"]
         manifest_number = r.data["manifest_number"]
-        # vehicle_number = r.data['vehicle_number']
+        vehicle_number = r.data.get('vehicle_number')
         tohub = r.data["tohub"]
         branch_code = UserDetails.objects.get(user=r.user)
         date = r.data["date"]
@@ -128,11 +127,19 @@ class OutScanMobile(APIView):
             if BranchDetails.objects.filter(branchname=tohub).exists():
                 tobranchde = BranchDetails.objects.get(branchname=tohub)
                 tohub = tobranchde.branch_code
+            vehicle = Vehicle_Details.objects.filter(
+                    vehiclenumber=vehicle_number)
+            if vehicle.exists():
+                vehicle = Vehicle_Details.objects.get(
+                    vehiclenumber=vehicle_number)
+            else:
+                vehicle = None
             manifest = ManifestDetails.objects.create(
                 date=dt_naive,
                 inscaned_branch_code=branch_code.code,
                 tohub_branch_code=UserDetails.objects.get(code=tohub).code,
                 manifestnumber=manifest_number,
+                vehicle_number=vehicle,
             )
             for i in awb_no:
                 OutscanModel.objects.create(awbno=i, manifestnumber=manifest)
@@ -189,3 +196,119 @@ class ManifestData(APIView):
                 "awbno": data,
             }
         )
+
+
+class DownloadManifestPDF(APIView):
+    """
+    Download Manifest PDF directly (Generated on-the-fly)
+    GET /api/manifest/download/{manifest_number}/
+    No authentication required for direct download links
+    """
+    authentication_classes = []  # Allow unauthenticated access
+    permission_classes = []  # No permission required
+    
+    def get(self, request, manifest_number):
+        try:
+            from django.http import HttpResponse
+            from ..utils.pdf_generator import get_manifest_data, generate_manifest_pdf, generate_error_pdf
+            
+            # Get Manifest Data
+            manifest_data = get_manifest_data(manifest_number)
+            
+            if not manifest_data:
+                # Generate Error PDF for not found
+                error_pdf = generate_error_pdf(f"Manifest {manifest_number} not found or data missing")
+                if error_pdf:
+                    response = HttpResponse(error_pdf, content_type='application/pdf')
+                    response['Content-Disposition'] = f'attachment; filename="Error_Manifest_{manifest_number}.pdf"'
+                    response['Content-Length'] = len(error_pdf)
+                    return response
+                return Response({"status": "error", "message": "Manifest not found"}, 
+                              status=status.HTTP_404_NOT_FOUND)
+            
+            # Generate PDF
+            pdf_bytes = generate_manifest_pdf(manifest_data)
+            
+            if pdf_bytes:
+                # Create HTTP response with PDF
+                response = HttpResponse(pdf_bytes, content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="Manifest_{manifest_number}.pdf"'
+                response['Content-Length'] = len(pdf_bytes)
+                return response
+            else:
+                raise Exception("Failed to generate PDF bytes")
+                
+        except Exception as e:
+            # Generate Error PDF
+            try:
+                from ..utils.pdf_generator import generate_error_pdf
+                error_pdf = generate_error_pdf(f"Error generating PDF: {str(e)}")
+                if error_pdf:
+                    response = HttpResponse(error_pdf, content_type='application/pdf')
+                    response['Content-Disposition'] = f'attachment; filename="Error_Manifest_{manifest_number}.pdf"'
+                    response['Content-Length'] = len(error_pdf)
+                    return response
+            except:
+                pass
+            
+            # Fallback to JSON error if everything fails
+            return Response({"status": "error", "message": str(e)}, 
+                          status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ViewManifestPDF(APIView):
+    """
+    View Manifest PDF inline in browser (Generated on-the-fly)
+    GET /api/manifest/view/{manifest_number}/
+    No authentication required for viewing
+    """
+    authentication_classes = []  # Allow unauthenticated access
+    permission_classes = []  # No permission required
+    
+    def get(self, request, manifest_number):
+        try:
+            from django.http import HttpResponse
+            from ..utils.pdf_generator import get_manifest_data, generate_manifest_pdf, generate_error_pdf
+            
+            # Get Manifest Data
+            manifest_data = get_manifest_data(manifest_number)
+            
+            if not manifest_data:
+                 # Generate Error PDF for not found
+                error_pdf = generate_error_pdf(f"Manifest {manifest_number} not found or data missing")
+                if error_pdf:
+                    response = HttpResponse(error_pdf, content_type='application/pdf')
+                    response['Content-Disposition'] = f'inline; filename="Error_Manifest_{manifest_number}.pdf"'
+                    response['Content-Length'] = len(error_pdf)
+                    return response
+                return Response({"status": "error", "message": "Manifest not found"}, 
+                              status=status.HTTP_404_NOT_FOUND)
+            
+            # Generate PDF
+            pdf_bytes = generate_manifest_pdf(manifest_data)
+            
+            if pdf_bytes:
+                # Create HTTP response with PDF for inline viewing
+                response = HttpResponse(pdf_bytes, content_type='application/pdf')
+                response['Content-Disposition'] = f'inline; filename="Manifest_{manifest_number}.pdf"'
+                response['Content-Length'] = len(pdf_bytes)
+                return response
+            else:
+                 raise Exception("Failed to generate PDF bytes")
+                
+        except Exception as e:
+            # Generate Error PDF
+            try:
+                from ..utils.pdf_generator import generate_error_pdf
+                error_pdf = generate_error_pdf(f"Error viewing PDF: {str(e)}")
+                if error_pdf:
+                    response = HttpResponse(error_pdf, content_type='application/pdf')
+                    response['Content-Disposition'] = f'inline; filename="Error_Manifest_{manifest_number}.pdf"'
+                    response['Content-Length'] = len(error_pdf)
+                    return response
+            except:
+                pass
+                
+            return Response({"status": "error", "message": str(e)}, 
+                          status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

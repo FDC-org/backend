@@ -77,6 +77,7 @@ class DRS(models.Model):
     code = models.CharField(max_length=20)
     date= models.DateTimeField()
     location = models.CharField(max_length=20)
+    document_url = models.URLField(blank=True, null=True)  # Cloudinary PDF URL
 
 
 class DrsDetails(models.Model):
