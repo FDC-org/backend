@@ -193,8 +193,8 @@ def generate_drs_pdf(drs_data):
         
         # Party details
         party_text = f"<b>{item['party_name']}</b><br/><font size=8>{item['party_phone']}</font>"
-        if item.get('pieces') or item.get('weight'):
-            party_text += f"<br/><font size=8>Pcs: {item['pieces']} | Wt: {item['weight']} kg</font>"
+        # if item.get('pieces') or item.get('weight'):
+            # party_text += f"<br/><font size=8>Pcs: {item['pieces']} | Wt: {item['weight']} kg</font>"
         party_cell = Paragraph(party_text, styles['Normal'])
         
         awb_table_data.append([
