@@ -183,6 +183,7 @@ def generate_drs_pdf(drs_data):
             center_text += f"<br/><font size=8><i>Remarks: {item['remarks']}</i></font>"
         center_cell = Paragraph(center_text, styles['Normal'])
         
+        
         # Doc No with barcode
         awb_barcode_buffer = generate_barcode_image(item['awb_number'])
         if awb_barcode_buffer:
