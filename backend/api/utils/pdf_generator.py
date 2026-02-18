@@ -114,7 +114,7 @@ def generate_drs_pdf(drs_data):
     header_data = []
     
     # Company name
-    company_name = Paragraph('<b><font color="#1e3a8a">FDC</font> <font color="#c41e3a">Couriers and Cargo</font></b>', title_style)
+    company_name = Paragraph('<b><font color="#2e7d32">FDC</font> <font color="#1b5e20">Couriers and Cargo</font></b>', title_style)
     tagline = Paragraph('Fast, Reliable, Trusted Delivery Services', subtitle_style)
     
     # Branch info
@@ -175,6 +175,10 @@ def generate_drs_pdf(drs_data):
     for idx, item in enumerate(drs_data.get('awb_items', []), 1):
         # Center column with STD and remarks
         center_text = f"{item['center']}<br/><font size=8>STD: {item['doc_type']}</font>"
+        # Add Pcs and Wt
+        if item.get('pieces') or item.get('weight'):
+             center_text += f"<br/><font size=8>Pcs: {item['pieces']} | Wt: {item['weight']}</font>"
+        
         if item.get('remarks'):
             center_text += f"<br/><font size=8><i>Remarks: {item['remarks']}</i></font>"
         center_cell = Paragraph(center_text, styles['Normal'])
@@ -189,8 +193,8 @@ def generate_drs_pdf(drs_data):
         
         # Party details
         party_text = f"<b>{item['party_name']}</b><br/><font size=8>{item['party_phone']}</font>"
-        if item.get('pieces') or item.get('weight'):
-            party_text += f"<br/><font size=8>Pcs: {item['pieces']} | Wt: {item['weight']} kg</font>"
+        # if item.get('pieces') or item.get('weight'):
+            # party_text += f"<br/><font size=8>Pcs: {item['pieces']} | Wt: {item['weight']} kg</font>"
         party_cell = Paragraph(party_text, styles['Normal'])
         
         awb_table_data.append([
@@ -385,7 +389,7 @@ def generate_manifest_pdf(manifest_data):
     )
     
     # Header Section
-    company_name = Paragraph('<b><font color="#1e3a8a">FDC</font> <font color="#c41e3a">Couriers and Cargo</font></b>', title_style)
+    company_name = Paragraph('<b><font color="#2e7d32">FDC</font> <font color="#2e7d32">Couriers and Cargo</font></b>', title_style)
     tagline = Paragraph('Fast, Reliable, Trusted Delivery Services', subtitle_style)
     
     # Origin info
@@ -442,39 +446,39 @@ def generate_manifest_pdf(manifest_data):
     elements.append(Spacer(1, 5*mm))
     
     
-    # AWB Table with Pieces and Weight
-    awb_table_data = [['#', 'AWB Number', 'Barcode', 'Pcs', 'Wt (kg)']]
+    # AWB Table with Sender, Destination, Pieces and Weight
+    awb_table_data = [['#', 'AWB No', 'Sender', 'Dest', 'Pcs', 'Wt']]
     
     for idx, awb_item in enumerate(manifest_data.get('awb_list', []), 1):
         awb_number = awb_item['awb_number']
         pcs = awb_item.get('pcs', 0)
         wt = awb_item.get('wt', 0.0)
+        sender = awb_item.get('sender', '')
+        destination = awb_item.get('destination', '')
         
-        # AWB barcode
-        awb_barcode_buffer = generate_barcode_image(awb_number)
-        if awb_barcode_buffer:
-            awb_barcode_img = Image(awb_barcode_buffer, width=50*mm, height=10*mm)
-            barcode_cell = awb_barcode_img
-        else:
-            barcode_cell = ''
-        
+        # Truncate sender if too long
+        if len(sender) > 20:
+            sender = sender[:18] + '..'
+            
         awb_table_data.append([
             str(idx),
             Paragraph(awb_number, styles['Normal']),
-            barcode_cell,
+            Paragraph(sender, styles['Normal']),
+            Paragraph(destination, styles['Normal']),
             str(pcs),
             f"{wt:.2f}"
         ])
     
-    awb_table = Table(awb_table_data, colWidths=[12*mm, 60*mm, 70*mm, 20*mm, 28*mm])
+    # Adjusted column widths for new layout
+    awb_table = Table(awb_table_data, colWidths=[10*mm, 35*mm, 85*mm, 20*mm, 15*mm, 25*mm])
     awb_table.setStyle(TableStyle([
         # Header row
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#333333')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('FONTSIZE', (0, 0), (-1, 0), 9), # Slightly smaller font for header
         ('ALIGN', (0, 0), (0, -1), 'CENTER'),
-        ('ALIGN', (3, 0), (4, -1), 'CENTER'),  # Center align Pcs and Wt columns
+        ('ALIGN', (4, 0), (5, -1), 'CENTER'),  # Center align Pcs and Wt columns
         
         # All cells
         ('BOX', (0, 0), (-1, -1), 1, colors.black),
@@ -482,8 +486,8 @@ def generate_manifest_pdf(manifest_data):
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('LEFTPADDING', (0, 0), (-1, -1), 3),
         ('RIGHTPADDING', (0, 0), (-1, -1), 3),
-        ('TOPPADDING', (0, 0), (-1, -1), 5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
     ]))
     
     elements.append(awb_table)
@@ -601,6 +605,8 @@ def get_manifest_data(manifest_number):
             awb_no = outscan.awbno
             pcs = 0
             wt = 0.0
+            sender = ""
+            destination = ""
             
             # Try to get booking details for pieces and weight
             try:
@@ -609,13 +615,29 @@ def get_manifest_data(manifest_number):
                 if booking:
                     pcs = booking.pcs or 0
                     wt = float(booking.wt) if booking.wt else 0.0
+                    sender = booking.sendername or ""
+                    # Resolve destination name from code
+                    dest_code = booking.destination_code
+                    destination = dest_code or ""
+                    
+                    if dest_code:
+                        # Try to resolve destination name
+                        if HubDetails.objects.filter(hub_code=dest_code).exists():
+                            destination = HubDetails.objects.get(hub_code=dest_code).hubname
+                        elif BranchDetails.objects.filter(branch_code=dest_code).exists():
+                            destination = BranchDetails.objects.get(branch_code=dest_code).branchname
+                        # Fallback to UserDetails if needed
+                        elif UserDetails.objects.filter(code=dest_code).exists():
+                             destination = UserDetails.objects.get(code=dest_code).code_name 
             except:
                 pass
             
             awb_list.append({
                 'awb_number': awb_no,
                 'pcs': pcs,
-                'wt': wt
+                'wt': wt,
+                'sender': sender,
+                'destination': destination
             })
             
             total_pcs += pcs
