@@ -31,6 +31,10 @@ def test_manifest_pdf():
             print(f"Vehicle: {manifest_data.get('vehicle_number', 'N/A')}")
             print(f"AWB Count: {len(manifest_data['awb_list'])}")
             
+            print("\nAWB Details:")
+            for awb in manifest_data['awb_list']:
+                print(f"  - AWB: {awb['awb_number']}, Dest Code: {awb.get('destination', 'N/A')}, Sender: {awb.get('sender', 'N/A')}")
+            
             # Now test generating PDF with this data
             print("\nGenerating PDF from retrieved data...")
             pdf_bytes = generate_manifest_pdf(manifest_data)
