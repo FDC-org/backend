@@ -38,7 +38,7 @@ class UseDetails(APIView):
         except:
             return Response(
                 {
-                    "new_token": "none",
+                    "new_token": None,
                     "type": userdetails.type,
                     "name": userdetails.fullname(),
                     "code_name": userdetails.code_name,
@@ -355,6 +355,9 @@ class UserProfile(APIView):
             branch_type = ""
 
             # Check if it's a hub
+            related_hub_code = ""
+            related_hub_name = ""
+            
             if HubDetails.objects.filter(hub_code=user_details.code).exists():
                 hub = HubDetails.objects.get(hub_code=user_details.code)
                 branch_name = hub.hubname
@@ -364,6 +367,16 @@ class UserProfile(APIView):
                 branch = BranchDetails.objects.get(branch_code=user_details.code)
                 branch_name = branch.branchname
                 branch_type = "BRANCH"
+                
+                # Get Related Hub Details
+                related_hub_code = branch.hub
+                if HubDetails.objects.filter(hub_code=related_hub_code).exists():
+                    related_hub = HubDetails.objects.get(hub_code=related_hub_code)
+                    related_hub_name = related_hub.hubname
+                elif BranchDetails.objects.filter(branch_code=related_hub_code).exists():
+                     # In case branch reports to another branch (rare but possible)
+                    related_branch = BranchDetails.objects.get(branch_code=related_hub_code)
+                    related_hub_name = related_branch.branchname
 
             profile_data = {
                 "username": user.username,
@@ -371,6 +384,8 @@ class UserProfile(APIView):
                 "branch_code": user_details.code,
                 "branch_name": branch_name,
                 "branch_type": branch_type,
+                "related_hub_code": related_hub_code,
+                "related_hub_name": related_hub_name,
             }
 
             return Response({
