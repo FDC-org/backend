@@ -106,6 +106,6 @@ class CustomMiddleware:
 
         except Exception as e:
             print(e)
-            return JsonResponse({'error': "invalid token"})
+            return JsonResponse({'error': "invalid token"}, status=401)
 
         return self.get_response(request)
