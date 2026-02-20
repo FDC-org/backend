@@ -1,10 +1,10 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path
-from .views import views, delivery,user,basic_api_views,inscan,outscan
+from .views import views, delivery,user,basic_api_views,inscan,outscan, booking_pdf
 from .views.Booking import Booking
 from .views.delivery import DRSapi, Delivered
-from .views.onboarding import HubOnbaoard, BranchOnbaoard, UserOnboard
+from .views.onboarding import HubOnbaoard, BranchOnbaoard, UserOnboard, EmployeeOnboard
 
 urlpatterns = [
     # user api
@@ -28,6 +28,7 @@ urlpatterns = [
 
     path('booking/',Booking.as_view()),
     path('booking/<slug:date>', Booking.as_view()),
+    path('booking/pdf/<str:awb>/', booking_pdf.download_booking_pdf, name='booking-pdf'),
 
     # inscan
     path('inscan/', inscan.Inscan.as_view()),
@@ -59,10 +60,12 @@ urlpatterns = [
     path('addloc/',delivery.AddAreas.as_view()),
 
     path('onboard/hub/',HubOnbaoard.as_view()),
-    path('onboard/branch/',BranchOnbaoard.as_view()),
+    path('onboard/branch/', BranchOnbaoard.as_view()),
+    path('onboard/branch/<slug:branch_code>/', BranchOnbaoard.as_view()),
     # path('viewbranch/',GetBranchDetails.as_view()),
 
     path('onboard/user/', UserOnboard.as_view()),
+    path('onboard/employee/', EmployeeOnboard.as_view()),
     path('user/profile/', basic_api_views.UserProfile.as_view(), name='user-profile'),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
