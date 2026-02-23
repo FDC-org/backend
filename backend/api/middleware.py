@@ -99,7 +99,7 @@ class CustomMiddleware:
             if token.is_expired():
                 token.delete()
                 return JsonResponse({'error': "token expired"}, status=401)
-            request._cached_user  = token.user
+            request.user = token.user
             if token.expired_at - timezone.now() < timedelta(days=1):
                 token.delete()
                 request.new_token = models.CustomTokenModel.objects.create(user=token.user).token
