@@ -24,6 +24,9 @@ CustomTokenModel,ChildPieceDetails
 class UseDetails(APIView):
     def get(self, r):
         user = r.user
+        if not user or user.is_anonymous:
+            return Response({"error": "unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+        print(user)
         userdetails = UserDetails.objects.get(user=user)
         try:
             if r.new_token:
@@ -127,8 +130,8 @@ class VerifyToken(APIView):
         # except:
         #     return Response({"status": "invalid"})
         try:
-            token = CustomTokenModel.objects.get(user=r.user).token
-            if token:
+            token_obj = CustomTokenModel.objects.filter(user=r.user).first()
+            if token_obj:
                 return Response({"status": "valid"})
             else:
                 return Response({"status": "invalid"})
