@@ -924,11 +924,12 @@ def generate_booking_pdf(booking_data):
             P('✈', 14, bold=True, align=TA_CENTER),
             Paragraph(
                 '<b><font size=11>FDC COURIER &amp; CARGO</font></b><br/>'
-                '<font size=7>(LOCAL &amp; DOMESTIC CARGO SERVICES)</font>',
+                '<font size=7>(LOCAL &amp; DOMESTIC CARGO SERVICES)</font><br/>'
+                f'<font size=8>Booked Branch: <b>{bookingbranch}</b></font>',
                 style(8, leading=13, align=TA_LEFT)
             ),
            
-        ]], colWidths=[12*mm, LP-12*m], rowHeights=[18*mm])
+        ]], colWidths=[12*mm, LP-12*mm], rowHeights=[18*mm])
         brand.setStyle(TableStyle([
             ('BOX',          (0,0),(-1,-1), 0.5, colors.black),
             ('VALIGN',       (0,0),(-1,-1), 'MIDDLE'),
@@ -953,7 +954,7 @@ def generate_booking_pdf(booking_data):
         consignor_info = Table([[
             Paragraph(
                 f'<b>{sn}</b><br/>{sa}' if sn else '',
-                style(7, leading=9.5, align=TA_CENTER)
+                style(11, leading=9.5, align=TA_CENTER)
             ),
         ]], colWidths=[LP], rowHeights=[15*mm])
         consignor_info.setStyle(TableStyle([
@@ -974,21 +975,21 @@ def generate_booking_pdf(booking_data):
         # ]))
         # booked_branch_info = Table([[
         #     Paragraph(
-        #         f'<b>{bookingbranch}</b><br/>{sa}' if sn else '',
+        #         f'<b>{bookingbranch}</b>' if bookingbranch else '',
         #         style(7, leading=9.5, align=TA_LEFT)
         #     ),
         # ]], colWidths=[LP], rowHeights=[5*mm])
         # booked_branch_info.setStyle(TableStyle([
         #     ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
         #     ('VALIGN', (0,0),(-1,-1), 'TOP'),
-        #     ('TOPPADDING',  (0,0),(-1,-1), 3),
+        #     ('TOPPADDING',  (0,0),(-1,-1), 1),
         #     ('LEFTPADDING', (0,0),(-1,-1), 3),
         # ]))
 
         # ── L4: Barcode ──────────────────────────────────────────────────────
         bc = Table([
             [BarcodeFlowable(awb, total_width=LP, bar_height=11*mm)],
-            [P(f'* {awb} *', 8, bold=True, align=TA_CENTER)],
+            [P(f'* {awb} *', 14, bold=True, align=TA_CENTER)],
         ], colWidths=[LP], rowHeights=[12*mm, 5*mm])
         bc.setStyle(TableStyle([
             ('BOX',      (0,0),(-1,-1), 0.5, colors.black),
@@ -1080,8 +1081,8 @@ def generate_booking_pdf(booking_data):
             [brand],
             [consignor_label],
             [consignor_info],
-            [booked_branch_label],
-            [booked_branch_info],
+            # [booked_branch_label],
+            # [booked_branch_info],
             [bc],
             [footer],
         ], colWidths=[LP])
@@ -1140,7 +1141,7 @@ def generate_booking_pdf(booking_data):
 
         # ── R4: CONSIGNEE label ──────────────────────────────────────────────
         r_conslabel = Table([[
-            P('CONSIGNEE', 9, bold=True, align=TA_LEFT),
+            P('CONSIGNEE', 9 , bold=True, align=TA_CENTER),
         ]], colWidths=[RP], rowHeights=[6*mm])
         r_conslabel.setStyle(TableStyle([
             ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
@@ -1154,7 +1155,7 @@ def generate_booking_pdf(booking_data):
         r_consinfo = Table([[
             Paragraph(
                 f'<b>{rn}</b><br/>{ra}' if rn else '',
-                style(7, leading=9.5, align=TA_LEFT)
+                style(11, leading=9.5, align=TA_CENTER)
             ),
         ]], colWidths=[RP], rowHeights=[24*mm])
         r_consinfo.setStyle(TableStyle([
@@ -1299,7 +1300,7 @@ def generate_booking_pdf(booking_data):
     for i, label in enumerate(['SHIPPER COPY', 'POD COPY', 'OFFICE COPY']):
         elements.append(make_slip(label))
         if i < 2:
-            elements.append(Spacer(1, 5*mm))
+            elements.append(Spacer(1, 10*mm))
 
     doc.build(elements)
     buffer.seek(0)
@@ -1331,11 +1332,13 @@ def get_booking_data(awb_number):
         elif UserDetails.objects.filter(code=dest_code).exists():
             dest_name = UserDetails.objects.get(code=dest_code).code_name
         if HubDetails.objects.filter(hub_code=origin_code).exists():
-            branch_name_address = HubDetails.objects.get(hub_code=origin_code).hubname
+            h = HubDetails.objects.get(hub_code=origin_code)
+            branch_name_address = h.address
         elif BranchDetails.objects.filter(branch_code=origin_code).exists():
-            branch_name_address = BranchDetails.objects.get(branch_code=origin_code).branchname
-        elif UserDetails.objects.filter(code=origin_code).exists():
-            branch_name_address = UserDetails.objects.get(code=origin_code).code_name
+            b = BranchDetails.objects.get(branch_code=origin_code)
+            branch_name_address = b.address
+        # elif UserDetails.objects.filter(code=origin_code).exists():
+        #     branch_name_address = UserDetails.objects.get(code=origin_code).code_name
 
         return {
             'awb_number':       booking.awbno,
