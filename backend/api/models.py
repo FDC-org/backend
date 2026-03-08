@@ -54,8 +54,8 @@ class BranchDetails(models.Model):
     phone_number = models.CharField(max_length=10)
     hub = models.CharField(max_length=20)
     incharge_name = models.CharField(max_length=20)
-    manifest_counter = models.CharField(max_length=4, default='0001')
-    drs_counter = models.CharField(max_length=4, default='0001')
+    manifest_counter = models.CharField(max_length=4, default='001')
+    drs_counter = models.CharField(max_length=4, default='001')
 
 
 class DeliveryBoyDetalis(models.Model):

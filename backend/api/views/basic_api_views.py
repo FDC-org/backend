@@ -26,7 +26,6 @@ class UseDetails(APIView):
         user = r.user
         if not user or user.is_anonymous:
             return Response({"error": "unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
-        print(user)
         userdetails = UserDetails.objects.get(user=user)
         try:
             if r.new_token:
@@ -78,9 +77,13 @@ class AddBookingDetails(APIView):
 
 class GetManifestNumber(APIView):
     def get(self, r):
-        return Response(
-            {"manifestno": UserDetails.objects.get(user=r.user).manifestnumber}
-        )
+        try:
+            user = UserDetails.objects.get(user=r.user)
+            branch = BranchDetails.objects.get(branch_code=user.code)
+            manifest_num = branch.branch_code + '2' + branch.manifest_counter
+            return Response({"manifestno": manifest_num})
+        except Exception as e:
+            return Response({"manifestno": None, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GetHubList(APIView):
@@ -168,23 +171,47 @@ class Track(APIView):
                     if booking_details.exists():
                         awb_ref = awbno
                         search_awb = booking_details[0].awbno
-                    else:
-                        return Response({
-                            "status": "error",
-                            "message": "No tracking data found for this AWB/Reference/Child Piece number"
-                        })
+                    # If still not found — don't return error yet.
+                    # Continue to check inscan/outscan/DRS with original awbno.
             else:
                 awb_ref = booking_details[0].refernce_no
 
             # Get child pieces if exists (from parent AWB)
             child_pieces = []
-            if booking_details.exists() and int(booking_details[0].pcs) > 1:
+            try:
+                pcs_count = int(booking_details[0].pcs) if booking_details.exists() and booking_details[0].pcs else 0
+            except (ValueError, TypeError):
+                pcs_count = 0
+            if pcs_count > 1:
                 child_pieces = list(
                     ChildPieceDetails.objects.filter(awbno=booking_details[0].awbno)
                     .values('child_no')
                 )
 
-            # Tracking data collection - USE search_awb (child number if tracking child)
+            # Safe code-to-name/type resolver: Branch → Hub → User → code fallback
+            def resolve_name(code):
+                try:
+                    b = BranchDetails.objects.filter(branch_code=code).first()
+                    if b: return b.branchname
+                    h = HubDetails.objects.filter(hub_code=code).first()
+                    if h: return h.hubname
+                    u = UserDetails.objects.filter(code=code).first()
+                    if u: return u.code_name
+                except Exception:
+                    pass
+                return code
+
+            def resolve_type(code):
+                try:
+                    if BranchDetails.objects.filter(branch_code=code).exists(): return 'branch'
+                    if HubDetails.objects.filter(hub_code=code).exists(): return 'hub'
+                    u = UserDetails.objects.filter(code=code).first()
+                    if u: return u.type
+                except Exception:
+                    pass
+                return ''
+
+            # Tracking data collection
             tracking_data = []
             inscans = InscanModel.objects.filter(awbno=search_awb)
             if inscans:
@@ -192,13 +219,9 @@ class Track(APIView):
                     tracking_data.append({
                         "awbno": inscan.awbno,
                         "event": "Inscan",
-                        "location": UserDetails.objects.get(
-                            code=inscan.inscaned_branch_code
-                        ).code_name,
+                        "location": resolve_name(inscan.inscaned_branch_code),
                         "date": inscan.date,
-                        "branch_type": UserDetails.objects.get(
-                            code=inscan.inscaned_branch_code
-                        ).type,
+                        "branch_type": resolve_type(inscan.inscaned_branch_code),
                     })
 
             outscans = OutscanModel.objects.filter(awbno=search_awb).select_related(
@@ -210,16 +233,10 @@ class Track(APIView):
                     tracking_data.append({
                         "awbno": outscan.awbno,
                         "event": "Outscan",
-                        "location": UserDetails.objects.get(
-                            code=manifest.inscaned_branch_code
-                        ).code_name,
+                        "location": resolve_name(manifest.inscaned_branch_code),
                         "date": manifest.date,
-                        "branch_type": UserDetails.objects.get(
-                            code=manifest.inscaned_branch_code
-                        ).type,
-                        "tohub": UserDetails.objects.get(
-                            code=manifest.tohub_branch_code
-                        ).code_name,
+                        "branch_type": resolve_type(manifest.inscaned_branch_code),
+                        "tohub": resolve_name(manifest.tohub_branch_code),
                     })
 
             tracking_data.sort(key=lambda x: x["date"])
@@ -315,6 +332,13 @@ class Track(APIView):
                     "status": "success",
                 })
 
+            # Return whatever data was found — even if booking is missing
+            if not tracking_data and not delivery_data and not booking_details.exists():
+                return Response({
+                    "status": "error",
+                    "message": "No tracking data found for this AWB/Reference/Child Piece number"
+                })
+
             return Response({
                 "tracking_data": tracking_data,
                 "awbno": search_awb,
@@ -324,7 +348,7 @@ class Track(APIView):
             })
 
         except Exception as e:
-            print(f"Track error: {e}")
+            import traceback; traceback.print_exc()
             return Response({"status": "error", "message": str(e)})
 
 class VersionAPI(APIView):
