@@ -34,11 +34,11 @@ class Command(BaseCommand):
             # We extract the last 4 chars as the counter portion
             drs_records = DRS.objects.filter(code=code)
             max_drs = 0
+            drs_prefix = code + '1'
             for drs in drs_records:
                 drsno = drs.drsno or ""
-                # Try to strip the branch_code prefix and parse counter
-                if drsno.startswith(code):
-                    suffix = drsno[len(code):]
+                if drsno.startswith(drs_prefix):
+                    suffix = drsno[len(drs_prefix):]
                     try:
                         val = int(suffix)
                         if val > max_drs:
@@ -46,16 +46,17 @@ class Command(BaseCommand):
                     except ValueError:
                         pass
 
-            new_drs_counter = str(max_drs + 1).zfill(4)
+            new_drs_counter = str(max_drs + 1).zfill(3)
 
             # ── Manifest counter ─────────────────────────────────────────────
             # manifestnumber format: "{branch_code}{counter:04d}"
             manifest_records = ManifestDetails.objects.filter(inscaned_branch_code=code)
             max_manifest = 0
+            manifest_prefix = code + '2'
             for m in manifest_records:
                 mnum = m.manifestnumber or ""
-                if mnum.startswith(code):
-                    suffix = mnum[len(code):]
+                if mnum.startswith(manifest_prefix):
+                    suffix = mnum[len(manifest_prefix):]
                     try:
                         val = int(suffix)
                         if val > max_manifest:
@@ -63,7 +64,7 @@ class Command(BaseCommand):
                     except ValueError:
                         pass
 
-            new_manifest_counter = str(max_manifest + 1).zfill(4)
+            new_manifest_counter = str(max_manifest + 1).zfill(3)
 
             # ── Report & save ────────────────────────────────────────────────
             drs_changed = new_drs_counter != branch.drs_counter

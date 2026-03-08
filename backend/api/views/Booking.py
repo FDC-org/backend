@@ -45,7 +45,11 @@ class Booking(APIView):
 
                 # Get child pieces if pcs > 1
                 child_pieces = []
-                if int(i.pcs) > 1:
+                try:
+                    pcs_count = int(i.pcs) if i.pcs else 0
+                except (ValueError, TypeError):
+                    pcs_count = 0
+                if pcs_count > 1:
                     child_pieces = list(
                         ChildPieceDetails.objects.filter(awbno=i.awbno)
                         .values_list('child_no', flat=True)
@@ -106,10 +110,14 @@ class Booking(APIView):
                                           destination_code=destination_code,mode=mode,date=date,
                                           booked_code=booked_code,contents=contents,pincode=pincode,refernce_no=reference_no)
 
+            try:
+                pcs_int = int(pcs) if pcs else 0
+            except (ValueError, TypeError):
+                pcs_int = 0
             child_num = int(child_piece[-5:])
-            if int(pcs) > 1:
+            if pcs_int > 1:
                 try:
-                    for i in range(int(pcs)-1):
+                    for i in range(pcs_int - 1):
                         if ChildPieceDetails.objects.filter(child_no=child_piece[:-5]+str(child_num + i)).exists():
                             return Response({"status":"child exists"})
                         ChildPieceDetails.objects.create(awbno=awbno, child_no=child_piece[:-5]+str(child_num + i))

@@ -59,7 +59,7 @@ class DRSapi(APIView):
 
         try:
             branch = BranchDetails.objects.get(branch_code=user.code)
-            drs_num = branch.branch_code + branch.drs_counter  # e.g. '1234560001'
+            drs_num = branch.branch_code + '1' + branch.drs_counter  # e.g. '6826081001'
 
             for no in awbno:
                 if deliverdordrs.objects.filter(awbno=no).exists():
@@ -69,7 +69,7 @@ class DRSapi(APIView):
             for no in awbno:
                 DrsDetails.objects.create(drsno=drs.drsno, awbno=no)
                 deliverdordrs.objects.create(awbno=no)
-            branch.drs_counter = str(int(branch.drs_counter) + 1).zfill(4)
+            branch.drs_counter = str(int(branch.drs_counter) + 1).zfill(3)
             branch.save()
             
             # Generate and upload PDF
