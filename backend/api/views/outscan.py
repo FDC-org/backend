@@ -45,10 +45,13 @@ class OutScan(APIView):
         manifest_number = r.data["manifest_number"]
         vehicle_number = r.data["vehicle_number"]
         tohub = r.data["tohub"]
-        branch_code = UserDetails.objects.get(user=r.user)
+        user = UserDetails.objects.get(user=r.user)
         date = r.data["date"]
 
         try:
+            branch = BranchDetails.objects.get(branch_code=user.code)
+            manifest_num = branch.branch_code + branch.manifest_counter  # 10 chars
+
             if HubDetails.objects.filter(hubname=tohub).exists():
                 tohubde = HubDetails.objects.get(hubname=tohub)
                 tohub = tohubde.hub_code
@@ -59,24 +62,24 @@ class OutScan(APIView):
             dt_naive = datetime.datetime.strptime(date, "%d-%m-%Y, %H:%M:%S")
             manifest = ManifestDetails.objects.create(
                 date=dt_naive,
-                inscaned_branch_code=branch_code.code,
-                tohub_branch_code=UserDetails.objects.get(code_name=tohub).code,
-                manifestnumber=manifest_number,
+                inscaned_branch_code=user.code,
+                tohub_branch_code=tohub,
+                manifestnumber=manifest_num,
                 vehicle_number=Vehicle_Details.objects.get(
                     vehiclenumber=vehicle_number
                 ),
             )
             for i in awb_no:
                 OutscanModel.objects.create(awbno=i[2], manifestnumber=manifest)
-            branch_code.manifestnumber = str(int(branch_code.manifestnumber) + 1)
-            branch_code.save()
+            branch.manifest_counter = str(int(branch.manifest_counter) + 1).zfill(4)
+            branch.save()
             return Response(
-                {"status": "success", "manifest_number": branch_code.manifestnumber},
+                {"status": "success", "manifest_number": manifest_num},
                 status=status.HTTP_201_CREATED,
             )
         except Exception as e:
             print(e)
-            ma = ManifestDetails.objects.filter(manifestnumber=manifest_number)
+            ma = ManifestDetails.objects.filter(manifestnumber=manifest_num)
             if ma:
                 ma[0].delete()
             return Response({"status": "error"}, status=status.HTTP_406_NOT_ACCEPTABLE)
@@ -115,9 +118,12 @@ class OutScanMobile(APIView):
         manifest_number = r.data["manifest_number"]
         vehicle_number = r.data.get('vehicle_number')
         tohub = r.data["tohub"]
-        branch_code = UserDetails.objects.get(user=r.user)
+        user = UserDetails.objects.get(user=r.user)
         date = r.data["date"]
         try:
+            branch = BranchDetails.objects.get(branch_code=user.code)
+            manifest_num = branch.branch_code + branch.manifest_counter  # 10 chars
+
             dt_naive = datetime.datetime.strptime(date, "%d-%m-%Y, %H:%M:%S")
 
             if HubDetails.objects.filter(hubname=tohub).exists():
@@ -136,25 +142,25 @@ class OutScanMobile(APIView):
                 vehicle = None
             manifest = ManifestDetails.objects.create(
                 date=dt_naive,
-                inscaned_branch_code=branch_code.code,
+                inscaned_branch_code=user.code,
                 tohub_branch_code=UserDetails.objects.get(code=tohub).code,
-                manifestnumber=manifest_number,
+                manifestnumber=manifest_num,
                 vehicle_number=vehicle,
             )
             for i in awb_no:
                 OutscanModel.objects.create(awbno=i, manifestnumber=manifest)
-            branch_code.manifestnumber = str(int(branch_code.manifestnumber) + 1)
-            branch_code.save()
+            branch.manifest_counter = str(int(branch.manifest_counter) + 1).zfill(4)
+            branch.save()
             return Response(
-                {"status": "success", "manifest_number": branch_code.manifestnumber},
+                {"status": "success", "manifest_number": manifest_num},
                 status=status.HTTP_201_CREATED,
             )
         except Exception as e:
             print(e)
-            ma = ManifestDetails.objects.filter(manifestnumber=manifest_number)
+            ma = ManifestDetails.objects.filter(manifestnumber=manifest_num)
             if ma:
                 ma[0].delete()
-            oa = OutscanModel.objects.filter(manifestnumber=manifest_number)
+            oa = OutscanModel.objects.filter(manifestnumber=manifest_num)
             if oa:
                 for i in oa:
                     i.delete()
