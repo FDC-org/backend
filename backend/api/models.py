@@ -27,17 +27,9 @@ class UserDetails(models.Model):
     lastname = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=10)
     code_name = models.CharField(max_length=30)
-    manifestnumber = models.CharField(max_length=20,)
-    drs_number = models.CharField(max_length=20,)
 
     def fullname(self):
         return str(self.firstname) + " " + str(self.lastname)
-
-    def set_manifest_number(self):
-        return timezone.now().strftime('%y')+ "0" + str(self.code) + "010001"
-
-    def set_delivery_number(self):
-        return timezone.now().strftime('%y') +"0" + str(self.code) + "020001"
 
 
 
@@ -62,6 +54,8 @@ class BranchDetails(models.Model):
     phone_number = models.CharField(max_length=10)
     hub = models.CharField(max_length=20)
     incharge_name = models.CharField(max_length=20)
+    manifest_counter = models.CharField(max_length=4, default='0001')
+    drs_counter = models.CharField(max_length=4, default='0001')
 
 
 class DeliveryBoyDetalis(models.Model):

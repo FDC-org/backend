@@ -151,19 +151,6 @@ class BranchOnbaoard(APIView):
         }, status=201)
 
 
-import random
-from django.utils import timezone
-
-def generate_unique_number():
-    return str(random.randint(1000, 9999))
-
-def generate_drs_number(code):
-    year = timezone.now().strftime('%y')
-    return f"{year}{generate_unique_number()}{code}01001"
-
-def generate_manifest_number(code):
-    year = timezone.now().strftime('%y')
-    return f"{year}{generate_unique_number()}{code}02001"
 
 
 class UserOnboard(APIView):
@@ -200,10 +187,6 @@ class UserOnboard(APIView):
             password=password
         )
 
-        # 🔢 Generate numbers (Only if needed, usually for non-admin)
-        drs_number = generate_drs_number(code) if code else ""
-        manifest_number = generate_manifest_number(code) if code else ""
-
         user_detail = UserDetails.objects.create(
             user=user,
             type=user_type,
@@ -212,8 +195,6 @@ class UserOnboard(APIView):
             lastname=data.get('lastname'),
             phone_number=data.get('phone_number'),
             code_name=data.get('code_name'),
-            drs_number=drs_number,
-            manifestnumber=manifest_number
         )
 
         return JsonResponse({
@@ -225,8 +206,6 @@ class UserOnboard(APIView):
                 "code": code,
                 "firstname": user_detail.firstname,
                 "lastname": user_detail.lastname,
-                "drs_number": drs_number,
-                "manifest_number": manifest_number
             }
         }, status=201)
 
