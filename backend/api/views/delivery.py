@@ -11,7 +11,7 @@ import cloudinary.uploader
 from cloudinary.utils import cloudinary_url
 
 from ..models import UserDetails, DrsDetails, DRS, DeliveryBoyDetalis, DeliveryDetails, deliverdordrs, Locations, \
-    BookingDetails
+    BookingDetails, BranchDetails
 
 
 class DRSapi(APIView):
@@ -54,93 +54,53 @@ class DRSapi(APIView):
         delivery_boy = r.data['delivery_boy']
         date = r.data['date']
         lcoation = r.data['location']
-        branch = UserDetails.objects.get(user=r.user)
+        user = UserDetails.objects.get(user=r.user)
         dt_naive = datetime.datetime.strptime(date, "%d-%m-%Y, %H:%M:%S")
 
         try:
+            branch = BranchDetails.objects.get(branch_code=user.code)
+            drs_num = branch.branch_code + branch.drs_counter  # e.g. '1234560001'
+
             for no in awbno:
                 if deliverdordrs.objects.filter(awbno=no).exists():
                         return Response({"status":"exists","awbno":no},status=status.HTTP_409_CONFLICT)
             drs = DRS.objects.create(date=dt_naive, boycode=delivery_boy,
-                               code=branch.code, drsno=branch.drs_number, location=lcoation)
+                               code=user.code, drsno=drs_num, location=lcoation)
             for no in awbno:
-                DrsDetails.objects.create(drsno =drs.drsno, awbno = no)
-                deliverdordrs.objects.create(awbno = no)
-            branch.drs_number = str(int(branch.drs_number) + 1)
+                DrsDetails.objects.create(drsno=drs.drsno, awbno=no)
+                deliverdordrs.objects.create(awbno=no)
+            branch.drs_counter = str(int(branch.drs_counter) + 1).zfill(4)
             branch.save()
             
             # Generate and upload PDF
             try:
-                from ..utils.pdf_generator import generate_and_upload_drs_pdf
-                from ..models import BranchDetails, HubDetails
-                
-                # Get delivery boy name
-                delivery_boy_name = DeliveryBoyDetalis.objects.get(boy_code=delivery_boy).name
-                
-                # Get location name
-                location_name = Locations.objects.get(location_code=lcoation).location
-                
-                # Get branch details
-                branch_details = None
-                if BranchDetails.objects.filter(branch_code=branch.code).exists():
-                    branch_details = BranchDetails.objects.get(branch_code=branch.code)
-                    branch_name = branch_details.branchname
-                    branch_address = f"{branch_details.address}, {branch_details.location}"
-                else:
-                    branch_name = branch.code_name
-                    branch_address = ""
-                
-                # Prepare AWB items data
-                awb_items = []
-                for awb in awbno:
-                    booking = BookingDetails.objects.filter(awbno=awb).first()
-                    if booking:
-                        awb_items.append({
-                            'center': booking.destination_code or branch.code_name,
-                            'doc_type': booking.doc_type or 'NON-DOX',
-                            'awb_number': awb,
-                            'party_name': booking.recievername or '',
-                            'party_phone': booking.recieverphonenumber or '',
-                            'pieces': booking.pcs or 0,
-                            'weight': float(booking.wt) if booking.wt else 0.0,
-                            'remarks': booking.contents or ''
-                        })
-                    else:
-                        awb_items.append({
-                            'center': branch.code_name,
-                            'doc_type': 'NON-DOX',
-                            'awb_number': awb,
-                            'party_name': '',
-                            'party_phone': '',
-                            'pieces': 0,
-                            'weight': 0.0,
-                            'remarks': ''
-                        })
-                
-                # Prepare DRS data for PDF
-                drs_data = {
-                    'drs_number': drs.drsno,
-                    'branch_name': branch_name,
-                    'branch_address': branch_address,
-                    'date': dt_naive.strftime('%d/%m/%Y %H:%M:%S'),
-                    'area': location_name,
-                    'delivery_boy': delivery_boy_name,
-                    'awb_items': awb_items
-                }
-                
-                # Generate and upload PDF
-                pdf_url = generate_and_upload_drs_pdf(drs_data)
-                
-                # Update DRS with PDF URL
+                from ..utils.pdf_generator import get_drs_data, generate_drs_pdf
+                import io
+
+                # Use get_drs_data which reads from DB — DRS is already saved above
+                drs_data = get_drs_data(drs_num)
+                pdf_url = None
+
+                if drs_data:
+                    pdf_bytes = generate_drs_pdf(drs_data)
+                    if pdf_bytes:
+                        pdf_file = io.BytesIO(pdf_bytes)
+                        upload_result = cloudinary.uploader.upload(
+                            pdf_file,
+                            public_id=f"drs_{drs_num}",
+                            resource_type="raw",
+                        )
+                        pdf_url = upload_result.get("secure_url")
+
                 drs.document_url = pdf_url
                 drs.save()
-                
+
                 return Response({
                     "status": "success",
                     "drs_number": drs.drsno,
                     "document_url": pdf_url
                 }, status=status.HTTP_201_CREATED)
-                
+
             except Exception as pdf_error:
                 print(f"PDF generation error: {pdf_error}")
                 # DRS still created, just without PDF
@@ -150,13 +110,14 @@ class DRSapi(APIView):
                     "document_url": None,
                     "pdf_error": str(pdf_error)
                 }, status=status.HTTP_201_CREATED)
+
                 
         except Exception as e:
             print(e)
-            da = DRS.objects.filter(drsno=branch.drs_number)
+            da = DRS.objects.filter(drsno=drs_num)
             if da:
                 da[0].delete()
-            d = DrsDetails.objects.filter(drsno=branch.drs_number)
+            d = DrsDetails.objects.filter(drsno=drs_num)
             if d:
                 for i in d:
                     i.delete()

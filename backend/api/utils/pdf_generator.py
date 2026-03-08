@@ -1,51 +1,40 @@
-"""
-PDF Generation Utility for DRS and Manifest Documents using ReportLab
-Generates PDF on-demand without cloud storage
-"""
-
 import io
 import os
-from reportlab.lib.pagesizes import A4
+import base64
+import datetime
+import subprocess
+import tempfile
+from io import BytesIO
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib import colors
 from reportlab.lib.units import mm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, Flowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-import cloudinary
-import cloudinary.uploader
-import barcode
-from barcode.writer import ImageWriter
-from io import BytesIO
-import base64
+from reportlab.graphics.barcode import code128
+from reportlab.pdfgen import canvas as rl_canvas
 
+# ==================== UTILITIES ====================
 
-def generate_barcode_image(data, barcode_type='code128'):
-    """
-    Generate barcode as PIL Image
-    
-    Args:
-        data: Data to encode in barcode
-        barcode_type: Type of barcode (default: code128)
-    
-    Returns:
-        BytesIO buffer containing barcode image
-    """
-    try:
-        barcode_class = barcode.get_barcode_class(barcode_type)
-        barcode_instance = barcode_class(str(data), writer=ImageWriter())
-        
-        buffer = BytesIO()
-        barcode_instance.write(buffer, options={
-            'write_text': False,
-            'module_height': 10,
-            'module_width': 0.2,
-            'quiet_zone': 1
-        })
-        buffer.seek(0)
-        return buffer
-    except Exception:
-        # Silently fail on barcode error to prevent stdout pollution
-        return None
+class BarcodeFlowable(Flowable):
+    """Pure ReportLab barcode - works on Windows & Linux without external tools."""
+    def __init__(self, value, total_width=190*mm, bar_height=14*mm):
+        Flowable.__init__(self)
+        self.value = str(value)
+        self.width = total_width
+        self.height = bar_height
+
+    def draw(self):
+        # Using Code128 which is standard forAWB/Manifests
+        barcode = code128.Code128(
+            self.value,
+            barWidth=1.1,
+            barHeight=self.height,
+            humanReadable=False
+        )
+        # Center the barcode in the allocated width
+        x_offset = (self.width - barcode.width) / 2
+        barcode.drawOn(self.canv, x_offset, 0)
 
 
 def generate_error_pdf(error_message):
@@ -120,11 +109,8 @@ def generate_drs_pdf(drs_data):
     # Branch info
     branch_info = Paragraph(f'<b>{drs_data["branch_name"]}</b><br/>{drs_data["branch_address"]}', styles['Normal'])
     
-    # DRS Barcode
-    drs_barcode_buffer = generate_barcode_image(drs_data['drs_number'])
-    drs_barcode_img = None
-    if drs_barcode_buffer:
-        drs_barcode_img = Image(drs_barcode_buffer, width=80*mm, height=15*mm)
+    # DRS Barcode (Using native ReportLab Flowable)
+    drs_barcode_img = BarcodeFlowable(drs_data['drs_number'], total_width=70*mm, bar_height=14*mm)
     
     drs_info = Paragraph(f'<b>{drs_data["drs_number"]}</b><br/>Page: 1', 
                          ParagraphStyle('DRSInfo', parent=styles['Normal'], alignment=TA_RIGHT))
@@ -175,9 +161,9 @@ def generate_drs_pdf(drs_data):
     for idx, item in enumerate(drs_data.get('awb_items', []), 1):
         # Center column with STD and remarks
         center_text = f"{item['center']}<br/><font size=8>STD: {item['doc_type']}</font>"
-        # Add Pcs and Wt
-        if item.get('pieces') or item.get('weight'):
-             center_text += f"<br/><font size=8>Pcs: {item['pieces']} | Wt: {item['weight']}</font>"
+        # Add Time
+        if item.get('time'):
+             center_text += f"<br/><font size=8>Time: {item['time']}</font>"
         
         if item.get('remarks'):
             center_text += f"<br/><font size=8><i>Remarks: {item['remarks']}</i></font>"
@@ -185,12 +171,8 @@ def generate_drs_pdf(drs_data):
         
         
         # Doc No with barcode
-        awb_barcode_buffer = generate_barcode_image(item['awb_number'])
-        if awb_barcode_buffer:
-            awb_barcode_img = Image(awb_barcode_buffer, width=40*mm, height=10*mm)
-            doc_cell = [Paragraph(item['awb_number'], styles['Normal']), awb_barcode_img]
-        else:
-            doc_cell = Paragraph(item['awb_number'], styles['Normal'])
+        awb_barcode_img = BarcodeFlowable(item['awb_number'], total_width=40*mm, bar_height=10*mm)
+        doc_cell = [Paragraph(item['awb_number'], styles['Normal']), awb_barcode_img]
         
         # Party details
         party_text = f"<b>{item['party_name']}</b><br/><font size=8>{item['party_phone']}</font>"
@@ -206,7 +188,7 @@ def generate_drs_pdf(drs_data):
             ''
         ])
     
-    awb_table = Table(awb_table_data, colWidths=[10*mm, 35*mm, 50*mm, 65*mm, 30*mm])
+    awb_table = Table(awb_table_data, colWidths=[10*mm, 35*mm, 50*mm, 45*mm, 50*mm])
     awb_table.setStyle(TableStyle([
         # Header row
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#333333')),
@@ -304,12 +286,14 @@ def get_drs_data(drs_number):
             booking = BookingDetails.objects.filter(awbno=awb).first()
             
             if booking:
+                booking_time = booking.date.strftime('%I:%M %p') if booking.date else ''
                 awb_items.append({
                     'center': booking.destination_code or branch_name,
                     'doc_type': booking.doc_type or 'NON-DOX',
                     'awb_number': awb,
                     'party_name': booking.recievername or '',
                     'party_phone': booking.recieverphonenumber or '',
+                    'time': booking_time,
                     'pieces': booking.pcs or 0,
                     'weight': float(booking.wt) if booking.wt else 0.0,
                     'remarks': booking.contents or ''
@@ -321,6 +305,7 @@ def get_drs_data(drs_number):
                     'awb_number': awb,
                     'party_name': '',
                     'party_phone': '',
+                    'time': '',
                     'pieces': 0,
                     'weight': 0.0,
                     'remarks': ''
@@ -374,8 +359,8 @@ def generate_manifest_pdf(manifest_data):
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
-        fontSize=24,
-        textColor=colors.HexColor('#1e3a8a'),
+        fontSize=18,
+        textColor=colors.HexColor('#2e7d32'),
         alignment=TA_CENTER,
         spaceAfter=5
     )
@@ -396,11 +381,8 @@ def generate_manifest_pdf(manifest_data):
     # Origin info
     origin_info = Paragraph(f'<b>Origin:</b> {manifest_data["origin"]}<br/>{manifest_data.get("origin_address", "")}', styles['Normal'])
     
-    # Manifest Barcode
-    manifest_barcode_buffer = generate_barcode_image(manifest_data['manifest_number'])
-    manifest_barcode_img = None
-    if manifest_barcode_buffer:
-        manifest_barcode_img = Image(manifest_barcode_buffer, width=80*mm, height=15*mm)
+    # Manifest Barcode (Using native ReportLab Flowable for robustness)
+    manifest_barcode_img = BarcodeFlowable(manifest_data['manifest_number'], total_width=80*mm, bar_height=14*mm)
     
     manifest_info = Paragraph(f'<b>{manifest_data["manifest_number"]}</b><br/>Page: 1', 
                              ParagraphStyle('ManifestInfo', parent=styles['Normal'], alignment=TA_RIGHT))
@@ -413,12 +395,15 @@ def generate_manifest_pdf(manifest_data):
         ['', manifest_info]
     ]
     
-    header_table = Table(header_table_data, colWidths=[120*mm, 70*mm])
+    header_table = Table(header_table_data, colWidths=[110*mm, 80*mm])
     header_table.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('SPAN', (0, 0), (1, 0)),
         ('SPAN', (0, 1), (1, 1)),
-        ('LINEBELOW', (0, 3), (-1, 3), 2, colors.black),
+        ('LEFTPADDING', (0, 0), (-1, -1), 5*mm), # Add some left margin
+        ('RIGHTPADDING', (0, 2), (0, 2), 5*mm), # Add margin to address
+        ('ALIGN', (1, 2), (1, 3), 'RIGHT'),     # Align barcode and number to right
+        ('LINEBELOW', (0, 3), (-1, 3), 2, colors.HexColor('#2e7d32')), # Theme green line
     ]))
     
     elements.append(header_table)
@@ -447,31 +432,35 @@ def generate_manifest_pdf(manifest_data):
     elements.append(Spacer(1, 5*mm))
     
     
-    # AWB Table with Sender, Destination, Pieces and Weight
-    awb_table_data = [['#', 'AWB No', 'Sender', 'Dest', 'Pcs', 'Wt']]
+    # AWB Table with Sender, Receiver, Destination, Pieces and Weight
+    awb_table_data = [['#', 'AWB No', 'Sender', 'Receiver', 'Dest', 'Pcs', 'Wt']]
     
     for idx, awb_item in enumerate(manifest_data.get('awb_list', []), 1):
         awb_number = awb_item['awb_number']
         pcs = awb_item.get('pcs', 0)
         wt = awb_item.get('wt', 0.0)
         sender = awb_item.get('sender', '')
+        receiver = awb_item.get('receiver', '')
         destination = awb_item.get('destination', '')
         
-        # Truncate sender if too long
-        if len(sender) > 20:
-            sender = sender[:18] + '..'
+        # Truncate if too long
+        if len(sender) > 15:
+            sender = sender[:13] + '..'
+        if len(receiver) > 15:
+            receiver = receiver[:13] + '..'
             
         awb_table_data.append([
             str(idx),
             Paragraph(awb_number, styles['Normal']),
             Paragraph(sender, styles['Normal']),
+            Paragraph(receiver, styles['Normal']),
             Paragraph(destination, styles['Normal']),
             str(pcs),
             f"{wt:.2f}"
         ])
     
     # Adjusted column widths for new layout
-    awb_table = Table(awb_table_data, colWidths=[10*mm, 35*mm, 85*mm, 20*mm, 15*mm, 25*mm])
+    awb_table = Table(awb_table_data, colWidths=[10*mm, 35*mm, 45*mm, 45*mm, 20*mm, 15*mm, 20*mm])
     awb_table.setStyle(TableStyle([
         # Header row
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#333333')),
@@ -607,6 +596,7 @@ def get_manifest_data(manifest_number):
             pcs = 0
             wt = 0.0
             sender = ""
+            receiver = ""
             destination = ""
             
             # Try to get booking details for pieces and weight
@@ -617,6 +607,7 @@ def get_manifest_data(manifest_number):
                     pcs = booking.pcs or 0
                     wt = float(booking.wt) if booking.wt else 0.0
                     sender = booking.sendername or ""
+                    receiver = booking.recievername or ""
                     # Resolve destination name from code
                     dest_code = booking.destination_code
                     destination = dest_code or ""
@@ -638,6 +629,7 @@ def get_manifest_data(manifest_number):
                 'pcs': pcs,
                 'wt': wt,
                 'sender': sender,
+                'receiver': receiver,
                 'destination': destination
             })
             
@@ -661,187 +653,23 @@ def get_manifest_data(manifest_number):
         return None
 
 
-# ==================== BOOKING PDF GENERATION ====================
-from io import BytesIO
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.units import mm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-from reportlab.graphics.barcode import code128
-from reportlab.graphics.shapes import Drawing
-from reportlab.graphics import renderPDF
+# ==================== HELPERS ====================
 
-
-def generate_barcode_image(awb_number, width=160*mm, height=15*mm):
-    """Generate barcode as BytesIO PNG image"""
-    try:
-        from reportlab.graphics.barcode import code128
-        from reportlab.pdfgen import canvas as rl_canvas
-        import tempfile, os, subprocess
-
-        tmp_pdf = tempfile.mktemp(suffix='.pdf')
-        c = rl_canvas.Canvas(tmp_pdf, pagesize=(width, height))
-        barcode = code128.Code128(awb_number, barWidth=1.2, barHeight=height * 0.75, humanReadable=False)
-        barcode.drawOn(c, (width - barcode.width) / 2, height * 0.1)
-        c.save()
-
-        tmp_png_base = tempfile.mktemp()
-        subprocess.run(['pdftoppm', '-r', '150', '-png', '-singlefile', tmp_pdf, tmp_png_base], capture_output=True)
-        os.unlink(tmp_pdf)
-        
-        png_path = tmp_png_base + '.png'
-        if os.path.exists(png_path):
-            data = open(png_path, 'rb').read()
-            os.unlink(png_path)
-            return BytesIO(data)
-        return None
-    except Exception as e:
-        print(f"Barcode error: {e}")
-        return None
-
-
-from io import BytesIO
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.units import mm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-from reportlab.graphics.barcode import code128
-from reportlab.graphics.shapes import Drawing
-from reportlab.graphics import renderPDF
-
-from reportlab.platypus.flowables import Flowable
-from reportlab.graphics.barcode import code128
-
-class BarcodeFlowable(Flowable):
-    """Pure ReportLab barcode - no external tools, works on Windows & Linux."""
-    def __init__(self, awb_number, total_width=190*mm, bar_height=14*mm):
-        Flowable.__init__(self)
-        self.awb_number = awb_number
-        self.width = total_width
-        self.height = bar_height
-
-    def draw(self):
-        barcode = code128.Code128(
-            self.awb_number,
-            barWidth=1.1,
-            barHeight=self.height,
-            humanReadable=False
-        )
-        x_offset = (self.width - barcode.width) / 2
-        barcode.drawOn(self.canv, x_offset, 0)
-
-from io import BytesIO
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.units import mm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.platypus.flowables import Flowable
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
-from reportlab.graphics.barcode import code128
-
-
-class BarcodeFlowable(Flowable):
-    """Pure ReportLab barcode - no external tools, works on Windows & Linux."""
-    def __init__(self, awb_number, total_width=190*mm, bar_height=14*mm):
-        Flowable.__init__(self)
-        self.awb_number = awb_number
-        self.width = total_width
-        self.height = bar_height
-
-    def draw(self):
-        barcode = code128.Code128(
-            self.awb_number,
-            barWidth=1.1,
-            barHeight=self.height,
-            humanReadable=False
-        )
-        x_offset = (self.width - barcode.width) / 2
-        barcode.drawOn(self.canv, x_offset, 0)
-
-
-def P(text, size=8, bold=False, align=TA_CENTER, leading=None):
-    return Paragraph(
-        text,
-        ParagraphStyle(
-            '_',
-            fontName='Helvetica-Bold' if bold else 'Helvetica',
-            fontSize=size,
-            leading=leading or (size + 2),
-            alignment=align
-        )
+def style(size=8, bold=False, align=TA_LEFT, leading=None, color=colors.black):
+    return ParagraphStyle('_',
+        fontName='Helvetica-Bold' if bold else 'Helvetica',
+        fontSize=size,
+        leading=leading or (size * 1.3),
+        alignment=align,
+        textColor=color,
     )
 
-from io import BytesIO
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib import colors
-from reportlab.lib.units import mm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.platypus.flowables import Flowable
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-from reportlab.graphics.barcode import code128
-
-
-class BarcodeFlowable(Flowable):
-    def __init__(self, value, total_width, bar_height=12*mm):
-        Flowable.__init__(self)
-        self.value = value
-        self.width = total_width
-        self.height = bar_height
-
-    def draw(self):
-        bc = code128.Code128(self.value, barWidth=0.9,
-                             barHeight=self.height, humanReadable=False)
-        bc.drawOn(self.canv, (self.width - bc.width) / 2, 0)
-
-
 def P(text, size=8, bold=False, align=TA_LEFT, leading=None, color=colors.black):
-    return Paragraph(text, ParagraphStyle(
-        '_', fontName='Helvetica-Bold' if bold else 'Helvetica',
-        fontSize=size, leading=leading or (size * 1.25),
-        alignment=align, textColor=color,
-    ))
+    return Paragraph(text, style(size, bold, align, leading, color))
 
-
-LGREY = colors.Color(0.88, 0.88, 0.88)
-GRID = [
-    ('GRID',          (0,0), (-1,-1), 0.5, colors.black),
-    ('VALIGN',        (0,0), (-1,-1), 'MIDDLE'),
-    ('TOPPADDING',    (0,0), (-1,-1), 1),
-    ('BOTTOMPADDING', (0,0), (-1,-1), 1),
-    ('LEFTPADDING',   (0,0), (-1,-1), 2),
-    ('RIGHTPADDING',  (0,0), (-1,-1), 2),
-]
-
-
-from io import BytesIO
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.units import mm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.platypus.flowables import Flowable
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-from reportlab.graphics.barcode import code128
-from reportlab.pdfgen import canvas as rl_canvas
-
-
-class BarcodeFlowable(Flowable):
-    def __init__(self, value, total_width, bar_height=10*mm):
-        Flowable.__init__(self)
-        self.value = value
-        self.width = total_width
-        self.height = bar_height
-
-    def draw(self):
-        bc = code128.Code128(self.value, barWidth=0.85,
-                             barHeight=self.height, humanReadable=False)
-        bc.drawOn(self.canv, (self.width - bc.width) / 2, 0)
+BLUE  = colors.HexColor('#1a6fa8')
+WHITE = colors.white
+LGREY = colors.Color(0.91, 0.91, 0.91)
 
 
 def style(size=8, bold=False, align=TA_LEFT, leading=None, color=colors.black):
