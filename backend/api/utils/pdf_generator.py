@@ -84,53 +84,69 @@ def generate_drs_pdf(drs_data):
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
-        fontSize=24,
-        textColor=colors.HexColor('#1e3a8a'),
-        alignment=TA_CENTER,
-        spaceAfter=5
+        fontSize=20,
+        textColor=colors.HexColor('#2e7d32'),
+        alignment=TA_LEFT,
+        spaceAfter=2
     )
-    
+
     subtitle_style = ParagraphStyle(
         'CustomSubtitle',
         parent=styles['Normal'],
-        fontSize=10,
+        fontSize=9,
         textColor=colors.grey,
+        alignment=TA_LEFT,
+        spaceAfter=4
+    )
+
+    drs_label_style = ParagraphStyle(
+        'DRSLabel',
+        parent=styles['Normal'],
+        fontSize=11,
         alignment=TA_CENTER,
-        spaceAfter=10
+        fontName='Helvetica-Bold',
+        spaceAfter=0,
+        spaceBefore=2,
     )
     
-    # Header Section
-    header_data = []
-    
-    # Company name
-    company_name = Paragraph('<b><font color="#2e7d32">FDC</font> <font color="#1b5e20">Couriers and Cargo</font></b>', title_style)
-    tagline = Paragraph('Fast, Reliable, Trusted Delivery Services', subtitle_style)
-    
-    # Branch info
-    branch_info = Paragraph(f'<b>{drs_data["branch_name"]}</b><br/>{drs_data["branch_address"]}', styles['Normal'])
-    
-    # DRS Barcode (Using native ReportLab Flowable)
-    drs_barcode_img = BarcodeFlowable(drs_data['drs_number'], total_width=70*mm, bar_height=14*mm)
-    
-    drs_info = Paragraph(f'<b>{drs_data["drs_number"]}</b><br/>Page: 1', 
-                         ParagraphStyle('DRSInfo', parent=styles['Normal'], alignment=TA_RIGHT))
-    
-    # Create header table
-    header_table_data = [
-        [company_name, ''],
-        [tagline, ''],
-        [branch_info, drs_barcode_img if drs_barcode_img else ''],
-        ['', drs_info]
+    # Left cell: brand + tagline + branch info
+    brand_block = [
+        Paragraph('<b><font color="#2e7d32">FDC Couriers and Cargo</font></b>', title_style),
+        Paragraph('Fast, Reliable, Trusted Delivery Services', subtitle_style),
+        Paragraph(
+            f'<b>{drs_data["branch_name"]}</b><br/>{drs_data["branch_address"]}',
+            styles['Normal']
+        ),
     ]
-    
-    header_table = Table(header_table_data, colWidths=[120*mm, 70*mm])
-    header_table.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('SPAN', (0, 0), (1, 0)),
-        ('SPAN', (0, 1), (1, 1)),
-        ('LINEBELOW', (0, 3), (-1, 3), 2, colors.black),
+
+    # Right cell: barcode + DRS number, both centered
+    drs_barcode_img = BarcodeFlowable(drs_data['drs_number'], total_width=72*mm, bar_height=14*mm)
+    drs_num_para = Paragraph(
+        f'<b>{drs_data["drs_number"]}</b>',
+        drs_label_style
+    )
+
+    barcode_inner = Table(
+        [[drs_barcode_img], [drs_num_para]],
+        colWidths=[80*mm]
+    )
+    barcode_inner.setStyle(TableStyle([
+        ('ALIGN',  (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING',    (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
     ]))
-    
+
+    # Single-row header: brand (left) | barcode+number (right, centered)
+    header_table = Table([[brand_block, barcode_inner]], colWidths=[105*mm, 85*mm])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN',  (1, 0), (1,  0), 'CENTER'),
+        ('LEFTPADDING',  (0, 0), (0, 0), 4*mm),
+        ('RIGHTPADDING', (1, 0), (1, 0), 4*mm),
+        ('LINEBELOW', (0, 0), (-1, 0), 2, colors.HexColor('#2e7d32')),
+    ]))
+
     elements.append(header_table)
     elements.append(Spacer(1, 5*mm))
     
@@ -156,7 +172,7 @@ def generate_drs_pdf(drs_data):
     elements.append(Spacer(1, 5*mm))
     
     # AWB Table
-    awb_table_data = [['#', 'Center', 'Doc No', 'Party Name', 'Signature']]
+    awb_table_data = [['#', 'Center', 'Doc No', 'Party Name', 'Pcs', 'Wt', 'Signature']]
     
     for idx, item in enumerate(drs_data.get('awb_items', []), 1):
         # Center column with STD and remarks
@@ -176,19 +192,22 @@ def generate_drs_pdf(drs_data):
         
         # Party details
         party_text = f"<b>{item['party_name']}</b><br/><font size=8>{item['party_phone']}</font>"
-        # if item.get('pieces') or item.get('weight'):
-            # party_text += f"<br/><font size=8>Pcs: {item['pieces']} | Wt: {item['weight']} kg</font>"
         party_cell = Paragraph(party_text, styles['Normal'])
+
+        pcs_cell = Paragraph(str(item.get('pieces', '')), styles['Normal'])
+        wt_cell  = Paragraph(str(item.get('weight', '')), styles['Normal'])
         
         awb_table_data.append([
             str(idx),
             center_cell,
             doc_cell,
             party_cell,
+            pcs_cell,
+            wt_cell,
             ''
         ])
-    
-    awb_table = Table(awb_table_data, colWidths=[10*mm, 35*mm, 50*mm, 45*mm, 50*mm])
+
+    awb_table = Table(awb_table_data, colWidths=[8*mm, 32*mm, 48*mm, 38*mm, 12*mm, 14*mm, 38*mm])
     awb_table.setStyle(TableStyle([
         # Header row
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#333333')),
@@ -361,8 +380,8 @@ def generate_manifest_pdf(manifest_data):
         parent=styles['Heading1'],
         fontSize=18,
         textColor=colors.HexColor('#2e7d32'),
-        alignment=TA_CENTER,
-        spaceAfter=5
+        alignment=TA_LEFT,
+        spaceAfter=2
     )
     
     subtitle_style = ParagraphStyle(
@@ -373,39 +392,57 @@ def generate_manifest_pdf(manifest_data):
         alignment=TA_CENTER,
         spaceAfter=10
     )
-    
-    # Header Section
-    company_name = Paragraph('<b><font color="#2e7d32">FDC</font> <font color="#2e7d32">Couriers and Cargo</font></b>', title_style)
-    tagline = Paragraph('Fast, Reliable, Trusted Delivery Services', subtitle_style)
-    
-    # Origin info
-    origin_info = Paragraph(f'<b>Origin:</b> {manifest_data["origin"]}<br/>{manifest_data.get("origin_address", "")}', styles['Normal'])
-    
-    # Manifest Barcode (Using native ReportLab Flowable for robustness)
-    manifest_barcode_img = BarcodeFlowable(manifest_data['manifest_number'], total_width=80*mm, bar_height=14*mm)
-    
-    manifest_info = Paragraph(f'<b>{manifest_data["manifest_number"]}</b><br/>Page: 1', 
-                             ParagraphStyle('ManifestInfo', parent=styles['Normal'], alignment=TA_RIGHT))
-    
-    # Create header table
-    header_table_data = [
-        [company_name, ''],
-        [tagline, ''],
-        [origin_info, manifest_barcode_img if manifest_barcode_img else ''],
-        ['', manifest_info]
+
+    barcode_label_style = ParagraphStyle(
+        'BarcodeLabel',
+        parent=styles['Normal'],
+        fontSize=11,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold',
+        spaceAfter=0,
+        spaceBefore=2,
+    )
+
+    # Left cell: brand name + tagline + origin
+    brand_block = [
+        Paragraph('<b><font color="#2e7d32">FDC Couriers and Cargo</font></b>', title_style),
+        Paragraph('Fast, Reliable, Trusted Delivery Services', subtitle_style),
+        Paragraph(
+            f'<b>Origin:</b> {manifest_data["origin"]}<br/>{manifest_data.get("origin_address", "")}',
+            styles['Normal']
+        ),
     ]
-    
-    header_table = Table(header_table_data, colWidths=[110*mm, 80*mm])
-    header_table.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('SPAN', (0, 0), (1, 0)),
-        ('SPAN', (0, 1), (1, 1)),
-        ('LEFTPADDING', (0, 0), (-1, -1), 5*mm), # Add some left margin
-        ('RIGHTPADDING', (0, 2), (0, 2), 5*mm), # Add margin to address
-        ('ALIGN', (1, 2), (1, 3), 'RIGHT'),     # Align barcode and number to right
-        ('LINEBELOW', (0, 3), (-1, 3), 2, colors.HexColor('#2e7d32')), # Theme green line
+
+    # Right cell: barcode + number, both centered
+    manifest_barcode_img = BarcodeFlowable(
+        manifest_data['manifest_number'], total_width=75*mm, bar_height=14*mm
+    )
+    manifest_num_para = Paragraph(
+        f'<b>{manifest_data["manifest_number"]}</b>',
+        barcode_label_style
+    )
+
+    barcode_inner = Table(
+        [[manifest_barcode_img], [manifest_num_para]],
+        colWidths=[80*mm]
+    )
+    barcode_inner.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
     ]))
-    
+
+    # Single-row header: brand (left) | barcode+number (right, centered)
+    header_table = Table([[brand_block, barcode_inner]], colWidths=[105*mm, 85*mm])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+        ('LEFTPADDING', (0, 0), (0, 0), 4*mm),
+        ('RIGHTPADDING', (1, 0), (1, 0), 4*mm),
+        ('LINEBELOW', (0, 0), (-1, 0), 2, colors.HexColor('#2e7d32')),
+    ]))
+
     elements.append(header_table)
     elements.append(Spacer(1, 5*mm))
     

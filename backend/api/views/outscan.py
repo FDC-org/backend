@@ -50,7 +50,7 @@ class OutScan(APIView):
 
         try:
             branch = BranchDetails.objects.get(branch_code=user.code)
-            manifest_num = branch.branch_code + branch.manifest_counter  # 10 chars
+            manifest_num = branch.branch_code + '2' + branch.manifest_counter  # e.g. '6826082001'
 
             if HubDetails.objects.filter(hubname=tohub).exists():
                 tohubde = HubDetails.objects.get(hubname=tohub)
@@ -71,7 +71,7 @@ class OutScan(APIView):
             )
             for i in awb_no:
                 OutscanModel.objects.create(awbno=i[2], manifestnumber=manifest)
-            branch.manifest_counter = str(int(branch.manifest_counter) + 1).zfill(4)
+            branch.manifest_counter = str(int(branch.manifest_counter) + 1).zfill(3)
             branch.save()
             return Response(
                 {"status": "success", "manifest_number": manifest_num},
@@ -122,7 +122,7 @@ class OutScanMobile(APIView):
         date = r.data["date"]
         try:
             branch = BranchDetails.objects.get(branch_code=user.code)
-            manifest_num = branch.branch_code + branch.manifest_counter  # 10 chars
+            manifest_num = branch.branch_code + '2' + branch.manifest_counter  # e.g. '6826082001'
 
             dt_naive = datetime.datetime.strptime(date, "%d-%m-%Y, %H:%M:%S")
 
@@ -149,7 +149,7 @@ class OutScanMobile(APIView):
             )
             for i in awb_no:
                 OutscanModel.objects.create(awbno=i, manifestnumber=manifest)
-            branch.manifest_counter = str(int(branch.manifest_counter) + 1).zfill(4)
+            branch.manifest_counter = str(int(branch.manifest_counter) + 1).zfill(3)
             branch.save()
             return Response(
                 {"status": "success", "manifest_number": manifest_num},
