@@ -37,6 +37,25 @@ class BarcodeFlowable(Flowable):
         barcode.drawOn(self.canv, x_offset, 0)
 
 
+class RotatedText(Flowable):
+    """Rotates a paragraph of text by 90 degrees."""
+    def __init__(self, text, style):
+        Flowable.__init__(self)
+        self.text = text
+        self.style = style
+        self.p = Paragraph(self.text, self.style)
+        self.p.wrap(72*mm, 10*mm)
+        self.width = self.p.height
+        self.height = self.p.width
+
+    def draw(self):
+        self.canv.saveState()
+        self.canv.translate(self.width, 0)
+        self.canv.rotate(90)
+        self.p.drawOn(self.canv, 0, 0)
+        self.canv.restoreState()
+
+
 def generate_error_pdf(error_message):
     """
     Generate a simple PDF containing only the error message
@@ -741,435 +760,386 @@ def BOX(extra=None):
     return s
 
 
-def generate_booking_pdf(booking_data):
-    buffer = BytesIO()
+# def generate_booking_pdf(booking_data):
+#     buffer = BytesIO()
 
-    # A4 portrait: usable = 210-8-8 = 194mm wide, 297-3-3 = 291mm tall
-    # 3 slips + 2 gaps of 1mm = 289mm → each slip ~96mm tall
-    W  = 194 * mm
-    SH = 95  * mm   # slip height
+#     # A4 portrait: usable = 210-8-8 = 194mm wide, 297-3-3 = 291mm tall
+#     # 3 slips + 2 gaps of 1mm = 289mm → each slip ~96mm tall
+#     W  = 194 * mm
+#     SH = 95  * mm   # slip height
 
-    doc = SimpleDocTemplate(
-        buffer, pagesize=A4,
-        topMargin=3*mm, bottomMargin=3*mm,
-        leftMargin=8*mm, rightMargin=8*mm,
-    )
+#     doc = SimpleDocTemplate(
+#         buffer, pagesize=A4,
+#         topMargin=3*mm, bottomMargin=3*mm,
+#         leftMargin=8*mm, rightMargin=8*mm,
+#     )
 
-    awb   = booking_data.get('awb_number', '')
-    org   = booking_data.get('origin_name', '').upper()
-    dst   = booking_data.get('destination_name', '').upper()
-    sn    = booking_data.get('sender_name', '')
-    sa    = booking_data.get('sender_address', '')
-    sp    = booking_data.get('sender_phone', '')
-    rn    = booking_data.get('receiver_name', '')
-    ra    = booking_data.get('receiver_address', '')
-    rp    = booking_data.get('receiver_phone', '')
-    dt    = booking_data.get('date', '')
-    tm    = booking_data.get('time', '')
-    pcs   = str(booking_data.get('pieces', ''))
-    wt    = str(booking_data.get('weight', ''))
-    cont  = str(booking_data.get('contents', ''))
-    amt   = str(booking_data.get('amount', ''))
-    bookingbranch = booking_data.get('booked_branch_address', '')
+#     awb   = booking_data.get('awb_number', '')
+#     org   = booking_data.get('origin_name', '').upper()
+#     dst   = booking_data.get('destination_name', '').upper()
+#     sn    = booking_data.get('sender_name', '')
+#     sa    = booking_data.get('sender_address', '')
+#     sp    = booking_data.get('sender_phone', '')
+#     rn    = booking_data.get('receiver_name', '')
+#     ra    = booking_data.get('receiver_address', '')
+#     rp    = booking_data.get('receiver_phone', '')
+#     dt    = booking_data.get('date', '')
+#     tm    = booking_data.get('time', '')
+#     pcs   = str(booking_data.get('pieces', ''))
+#     wt    = str(booking_data.get('weight', ''))
+#     cont  = str(booking_data.get('contents', ''))
+#     amt   = str(booking_data.get('amount', ''))
+#     bookingbranch = booking_data.get('booked_branch_address', '')
 
-    # ── Panel widths ──────────────────────────────────────────────────────────
-    # Image: left ~58% right ~42%
-    LP = 112 * mm
-    RP = W - LP   # 82mm
+#     # ── Panel widths ──────────────────────────────────────────────────────────
+#     # Image: left ~58% right ~42%
+#     LP = 112 * mm
+#     RP = W - LP   # 82mm
 
-    def make_slip(copy_label):
+#     def make_slip(copy_label):
 
-        # ════════════════════════════════════════════════════════════════════
-        # LEFT PANEL
-        # ════════════════════════════════════════════════════════════════════
+#         # ════════════════════════════════════════════════════════════════════
+#         # LEFT PANEL
+#         # ════════════════════════════════════════════════════════════════════
 
-        # ── L1: Branding row ─────────────────────────────────────────────────
-        # [icon 12mm | FDC COURIER & CARGO large]
-        brand = Table([[
-            P('✈', 14, bold=True, align=TA_CENTER),
-            Paragraph(
-                '<b><font size=11>FDC COURIER &amp; CARGO</font></b><br/>'
-                '<font size=7>(LOCAL &amp; DOMESTIC CARGO SERVICES)</font><br/>'
-                f'<font size=8>Booked Branch: <b>{bookingbranch}</b></font>',
-                style(8, leading=13, align=TA_LEFT)
-            ),
+#         # ── L1: Branding row ─────────────────────────────────────────────────
+#         # [icon 12mm | FDC COURIER & CARGO large]
+#         brand = Table([[
+#             P('✈', 14, bold=True, align=TA_CENTER),
+#             Paragraph(
+#                 '<b><font size=11>FDC COURIER &amp; CARGO</font></b><br/>'
+#                 '<font size=7>(LOCAL &amp; DOMESTIC CARGO SERVICES)</font><br/>'
+#                 f'<font size=8>Booked Branch: <b>{bookingbranch}</b></font>',
+#                 style(8, leading=13, align=TA_LEFT)
+#             ),
            
-        ]], colWidths=[12*mm, LP-12*mm], rowHeights=[18*mm])
-        brand.setStyle(TableStyle([
-            ('BOX',          (0,0),(-1,-1), 0.5, colors.black),
-            ('VALIGN',       (0,0),(-1,-1), 'MIDDLE'),
-            ('TOPPADDING',   (0,0),(-1,-1), 1),
-            ('BOTTOMPADDING',(0,0),(-1,-1), 1),
-            ('LEFTPADDING',  (0,0),(-1,-1), 2),
-        ]))
+#         ]], colWidths=[12*mm, LP-12*mm], rowHeights=[18*mm])
+#         brand.setStyle(TableStyle([
+#             ('BOX',          (0,0),(-1,-1), 0.5, colors.black),
+#             ('VALIGN',       (0,0),(-1,-1), 'MIDDLE'),
+#             ('TOPPADDING',   (0,0),(-1,-1), 1),
+#             ('BOTTOMPADDING',(0,0),(-1,-1), 1),
+#             ('LEFTPADDING',  (0,0),(-1,-1), 2),
+#         ]))
 
-        # ── L2: CONSIGNOR label ──────────────────────────────────────────────
-        consignor_label = Table([[
-            P('CONSIGNOR', 9, bold=True, align=TA_CENTER),
-        ]], colWidths=[LP], rowHeights=[6*mm])
-        consignor_label.setStyle(TableStyle([
-            ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
-            ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
-            ('LEFTPADDING', (0,0),(-1,-1), 2),
-            ('TOPPADDING',  (0,0),(-1,-1), 1),
-            ('BOTTOMPADDING',(0,0),(-1,-1),1),
-        ]))
+#         # ── L2: CONSIGNOR label ──────────────────────────────────────────────
+#         consignor_label = Table([[
+#             P('CONSIGNOR', 9, bold=True, align=TA_CENTER),
+#         ]], colWidths=[LP], rowHeights=[6*mm])
+#         consignor_label.setStyle(TableStyle([
+#             ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
+#             ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
+#             ('LEFTPADDING', (0,0),(-1,-1), 2),
+#             ('TOPPADDING',  (0,0),(-1,-1), 1),
+#             ('BOTTOMPADDING',(0,0),(-1,-1),1),
+#         ]))
 
-        # ── L3: Consignor address (tall blank writing area) ──────────────────
-        consignor_info = Table([[
-            Paragraph(
-                f'<b>{sn}</b><br/>{sa}' if sn else '',
-                style(11, leading=9.5, align=TA_CENTER)
-            ),
-        ]], colWidths=[LP], rowHeights=[15*mm])
-        consignor_info.setStyle(TableStyle([
-            ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
-            ('VALIGN', (0,0),(-1,-1), 'TOP'),
-            ('TOPPADDING',  (0,0),(-1,-1), 3),
-            ('LEFTPADDING', (0,0),(-1,-1), 3),
-        ]))
-        # booked_branch_label = Table([[
-        #     P('BOOKED BRANCH', 9, bold=True, align=TA_LEFT),
-        # ]], colWidths=[LP], rowHeights=[6*mm])
-        # booked_branch_label.setStyle(TableStyle([
-        #     ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
-        #     ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
-        #     ('LEFTPADDING', (0,0),(-1,-1), 2),
-        #     ('TOPPADDING',  (0,0),(-1,-1), 1),
-        #     ('BOTTOMPADDING',(0,0),(-1,-1),1),
-        # ]))
-        # booked_branch_info = Table([[
-        #     Paragraph(
-        #         f'<b>{bookingbranch}</b>' if bookingbranch else '',
-        #         style(7, leading=9.5, align=TA_LEFT)
-        #     ),
-        # ]], colWidths=[LP], rowHeights=[5*mm])
-        # booked_branch_info.setStyle(TableStyle([
-        #     ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
-        #     ('VALIGN', (0,0),(-1,-1), 'TOP'),
-        #     ('TOPPADDING',  (0,0),(-1,-1), 1),
-        #     ('LEFTPADDING', (0,0),(-1,-1), 3),
-        # ]))
+#         # ── L3: Consignor address (tall blank writing area) ──────────────────
+#         consignor_info = Table([[
+#             Paragraph(
+#                 f'<b>{sn}</b><br/>{sa}' if sn else '',
+#                 style(11, leading=9.5, align=TA_CENTER)
+#             ),
+#         ]], colWidths=[LP], rowHeights=[15*mm])
+#         consignor_info.setStyle(TableStyle([
+#             ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
+#             ('VALIGN', (0,0),(-1,-1), 'TOP'),
+#             ('TOPPADDING',  (0,0),(-1,-1), 3),
+#             ('LEFTPADDING', (0,0),(-1,-1), 3),
+#         ]))
+#         # booked_branch_label = Table([[
+#         #     P('BOOKED BRANCH', 9, bold=True, align=TA_LEFT),
+#         # ]], colWidths=[LP], rowHeights=[6*mm])
+#         # booked_branch_label.setStyle(TableStyle([
+#         #     ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
+#         #     ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
+#         #     ('LEFTPADDING', (0,0),(-1,-1), 2),
+#         #     ('TOPPADDING',  (0,0),(-1,-1), 1),
+#         #     ('BOTTOMPADDING',(0,0),(-1,-1),1),
+#         # ]))
+#         # booked_branch_info = Table([[
+#         #     Paragraph(
+#         #         f'<b>{bookingbranch}</b>' if bookingbranch else '',
+#         #         style(7, leading=9.5, align=TA_LEFT)
+#         #     ),
+#         # ]], colWidths=[LP], rowHeights=[5*mm])
+#         # booked_branch_info.setStyle(TableStyle([
+#         #     ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
+#         #     ('VALIGN', (0,0),(-1,-1), 'TOP'),
+#         #     ('TOPPADDING',  (0,0),(-1,-1), 1),
+#         #     ('LEFTPADDING', (0,0),(-1,-1), 3),
+#         # ]))
 
-        # ── L4: Barcode ──────────────────────────────────────────────────────
-        bc = Table([
-            [BarcodeFlowable(awb, total_width=LP, bar_height=11*mm)],
-            [P(f'* {awb} *', 14, bold=True, align=TA_CENTER)],
-        ], colWidths=[LP], rowHeights=[12*mm, 5*mm])
-        bc.setStyle(TableStyle([
-            ('BOX',      (0,0),(-1,-1), 0.5, colors.black),
-            ('LINEABOVE',(0,1),(0,1),   0.5, colors.black),
-            ('ALIGN',    (0,0),(-1,-1), 'CENTER'),
-            ('VALIGN',   (0,0),(-1,-1), 'MIDDLE'),
-            ('TOPPADDING',   (0,0),(-1,-1), 1),
-            ('BOTTOMPADDING',(0,0),(-1,-1), 1),
-        ]))
+#         # ── L4: Barcode ──────────────────────────────────────────────────────
+#         bc = Table([
+#             [BarcodeFlowable(awb, total_width=LP, bar_height=11*mm)],
+#             [P(f'* {awb} *', 14, bold=True, align=TA_CENTER)],
+#         ], colWidths=[LP], rowHeights=[12*mm, 5*mm])
+#         bc.setStyle(TableStyle([
+#             ('BOX',      (0,0),(-1,-1), 0.5, colors.black),
+#             ('LINEABOVE',(0,1),(0,1),   0.5, colors.black),
+#             ('ALIGN',    (0,0),(-1,-1), 'CENTER'),
+#             ('VALIGN',   (0,0),(-1,-1), 'MIDDLE'),
+#             ('TOPPADDING',   (0,0),(-1,-1), 1),
+#             ('BOTTOMPADDING',(0,0),(-1,-1), 1),
+#         ]))
 
-        # ── L5: Footer ───────────────────────────────────────────────────────
-        # Matches image exactly:
-        # [small warrant text] | Date | Time | Amount Rs. |        |
-        #                      |      |      | GST        |        |
-        #                      | Recd By     | Total Rs.  |        |
-        #                      | FDC         | CASH | CREDIT       |
-        # [Sender Signature]
-        warrant = Paragraph(' ', style(4.5, leading=6))
-        sig = Paragraph('Sender Signature', style(5, align=TA_CENTER))
+#         # ── L5: Footer ───────────────────────────────────────────────────────
+#         # Matches image exactly:
+#         # [small warrant text] | Date | Time | Amount Rs. |        |
+#         #                      |      |      | GST        |        |
+#         #                      | Recd By     | Total Rs.  |        |
+#         #                      | FDC         | CASH | CREDIT       |
+#         # [Sender Signature]
+#         warrant = Paragraph(' ', style(4.5, leading=6))
+#         sig = Paragraph('Sender Signature', style(5, align=TA_CENTER))
 
-        # col widths must sum to LP=112mm
-        # [warrant+sig=24mm | date=18 | time=18 | amt=22 | cash=15 | credit=15]
-        fc = [24*mm, 18*mm, 18*mm, 22*mm, 15*mm, 15*mm]
+#         # col widths must sum to LP=112mm
+#         # [warrant+sig=24mm | date=18 | time=18 | amt=22 | cash=15 | credit=15]
+#         fc = [24*mm, 18*mm, 18*mm, 22*mm, 15*mm, 15*mm]
 
-        footer = Table([
-            # row0: warrant | Date(hdr) | Time(hdr) | Amount Rs(hdr) | blank | blank
-            [warrant,
-             P('Date',       6, bold=True, align=TA_CENTER),
-             P('Time',       6, bold=True, align=TA_CENTER),
-             P('Amount Rs.', 6, bold=True, align=TA_CENTER),
-             P('', 6), P('', 6)],
-            # row1: '' | date val | time val | blank | blank | blank
-            ['',
-             P(dt, 7, align=TA_CENTER),
-             P(tm, 7, align=TA_CENTER),
-             P('', 7), P('', 7), P('', 7)],
-            # row2: '' | '' | '' | GST(hdr) | blank | blank
-            ['', '', '',
-             P('GST', 6, bold=True, align=TA_CENTER),
-             P('', 6), P('', 6)],
-            # row3: '' | Recd By(hdr, span2) | Total Rs(hdr) | blank | blank
-            ['',
-             P('Recd By', 6, bold=True, align=TA_CENTER),
-             P('', 6),
-             P('Total Rs.', 6, bold=True, align=TA_CENTER),
-             P('', 6), P('', 6)],
-            # row4: sig | FDC(span2) | CASH | CREDIT | blank
-            [sig,
-             P('FDC', 7, bold=True, align=TA_CENTER),
-             P('', 6),
-             P('CASH',   7, bold=True, align=TA_CENTER),
-             P('CREDIT', 7, bold=True, align=TA_CENTER),
-             P('', 6)],
-        ], colWidths=fc, rowHeights=[5*mm, 4*mm, 4*mm, 4*mm, 5*mm])
+#         footer = Table([
+#             # row0: warrant | Date(hdr) | Time(hdr) | Amount Rs(hdr) | blank | blank
+#             [warrant,
+#              P('Date',       6, bold=True, align=TA_CENTER),
+#              P('Time',       6, bold=True, align=TA_CENTER),
+#              P('Amount Rs.', 6, bold=True, align=TA_CENTER),
+#              P('', 6), P('', 6)],
+#             # row1: '' | date val | time val | blank | blank | blank
+#             ['',
+#              P(dt, 7, align=TA_CENTER),
+#              P(tm, 7, align=TA_CENTER),
+#              P('', 7), P('', 7), P('', 7)],
+#             # row2: '' | '' | '' | GST(hdr) | blank | blank
+#             ['', '', '',
+#              P('GST', 6, bold=True, align=TA_CENTER),
+#              P('', 6), P('', 6)],
+#             # row3: '' | Recd By(hdr, span2) | Total Rs(hdr) | blank | blank
+#             ['',
+#              P('Recd By', 6, bold=True, align=TA_CENTER),
+#              P('', 6),
+#              P('Total Rs.', 6, bold=True, align=TA_CENTER),
+#              P('', 6), P('', 6)],
+#             # row4: sig | FDC(span2) | CASH | CREDIT | blank
+#             [sig,
+#              P('FDC', 7, bold=True, align=TA_CENTER),
+#              P('', 6),
+#              P('CASH',   7, bold=True, align=TA_CENTER),
+#              P('CREDIT', 7, bold=True, align=TA_CENTER),
+#              P('', 6)],
+#         ], colWidths=fc, rowHeights=[5*mm, 4*mm, 4*mm, 4*mm, 5*mm])
 
-        footer.setStyle(TableStyle([
-            ('BOX',          (0,0),(-1,-1), 0.5, colors.black),
-            # vertical dividers between main columns
-            ('LINEAFTER',    (0,0),(0,-1),  0.5, colors.black),
-            ('LINEAFTER',    (1,0),(2,-1),  0.5, colors.black),  # after time col
-            ('LINEAFTER',    (3,0),(3,-1),  0.5, colors.black),
-            ('LINEAFTER',    (4,0),(4,-1),  0.5, colors.black),
-            # horizontal line below header row
-            ('LINEBELOW',    (1,0),(5,0),   0.5, colors.black),
-            ('LINEBELOW',    (1,2),(5,2),   0.5, colors.black),
-            ('LINEBELOW',    (1,3),(5,3),   0.5, colors.black),
-            # spans
-            ('SPAN', (0,0),(0,4)),   # warrant text full height
-            ('SPAN', (1,1),(1,2)),   # date value spans rows 1-2
-            ('SPAN', (2,1),(2,2)),   # time value spans rows 1-2
-            ('SPAN', (1,3),(2,3)),   # Recd By header spans cols 1-2
-            ('SPAN', (1,4),(2,4)),   # FDC value spans cols 1-2
-            # backgrounds
-            ('BACKGROUND',   (1,0),(3,0),   LGREY),
-            ('BACKGROUND',   (1,3),(2,3),   LGREY),
-            ('BACKGROUND',   (3,2),(3,2),   LGREY),
-            ('BACKGROUND',   (3,3),(3,3),   LGREY),
-            # alignment
-            ('VALIGN',       (0,0),(-1,-1), 'MIDDLE'),
-            ('VALIGN',       (0,0),(0,0),   'TOP'),
-            ('ALIGN',        (0,0),(-1,-1), 'CENTER'),
-            ('TOPPADDING',   (0,0),(-1,-1), 1),
-            ('BOTTOMPADDING',(0,0),(-1,-1), 1),
-            ('LEFTPADDING',  (0,0),(-1,-1), 1),
-            ('RIGHTPADDING', (0,0),(-1,-1), 1),
-        ]))
+#         footer.setStyle(TableStyle([
+#             ('BOX',          (0,0),(-1,-1), 0.5, colors.black),
+#             # vertical dividers between main columns
+#             ('LINEAFTER',    (0,0),(0,-1),  0.5, colors.black),
+#             ('LINEAFTER',    (1,0),(2,-1),  0.5, colors.black),  # after time col
+#             ('LINEAFTER',    (3,0),(3,-1),  0.5, colors.black),
+#             ('LINEAFTER',    (4,0),(4,-1),  0.5, colors.black),
+#             # horizontal line below header row
+#             ('LINEBELOW',    (1,0),(5,0),   0.5, colors.black),
+#             ('LINEBELOW',    (1,2),(5,2),   0.5, colors.black),
+#             ('LINEBELOW',    (1,3),(5,3),   0.5, colors.black),
+#             # spans
+#             ('SPAN', (0,0),(0,4)),   # warrant text full height
+#             ('SPAN', (1,1),(1,2)),   # date value spans rows 1-2
+#             ('SPAN', (2,1),(2,2)),   # time value spans rows 1-2
+#             ('SPAN', (1,3),(2,3)),   # Recd By header spans cols 1-2
+#             ('SPAN', (1,4),(2,4)),   # FDC value spans cols 1-2
+#             # backgrounds
+#             ('BACKGROUND',   (1,0),(3,0),   LGREY),
+#             ('BACKGROUND',   (1,3),(2,3),   LGREY),
+#             ('BACKGROUND',   (3,2),(3,2),   LGREY),
+#             ('BACKGROUND',   (3,3),(3,3),   LGREY),
+#             # alignment
+#             ('VALIGN',       (0,0),(-1,-1), 'MIDDLE'),
+#             ('VALIGN',       (0,0),(0,0),   'TOP'),
+#             ('ALIGN',        (0,0),(-1,-1), 'CENTER'),
+#             ('TOPPADDING',   (0,0),(-1,-1), 1),
+#             ('BOTTOMPADDING',(0,0),(-1,-1), 1),
+#             ('LEFTPADDING',  (0,0),(-1,-1), 1),
+#             ('RIGHTPADDING', (0,0),(-1,-1), 1),
+#         ]))
 
-        left = Table([
-            [brand],
-            [consignor_label],
-            [consignor_info],
-            # [booked_branch_label],
-            # [booked_branch_info],
-            [bc],
-            [footer],
-        ], colWidths=[LP])
-        left.setStyle(TableStyle([
-            ('TOPPADDING',   (0,0),(-1,-1), 0),
-            ('BOTTOMPADDING',(0,0),(-1,-1), 0),
-            ('LEFTPADDING',  (0,0),(-1,-1), 0),
-            ('RIGHTPADDING', (0,0),(-1,-1), 0),
-        ]))
+#         left = Table([
+#             [brand],
+#             [consignor_label],
+#             [consignor_info],
+#             # [booked_branch_label],
+#             # [booked_branch_info],
+#             [bc],
+#             [footer],
+#         ], colWidths=[LP])
+#         left.setStyle(TableStyle([
+#             ('TOPPADDING',   (0,0),(-1,-1), 0),
+#             ('BOTTOMPADDING',(0,0),(-1,-1), 0),
+#             ('LEFTPADDING',  (0,0),(-1,-1), 0),
+#             ('RIGHTPADDING', (0,0),(-1,-1), 0),
+#         ]))
 
-        # ════════════════════════════════════════════════════════════════════
-        # RIGHT PANEL
-        # ════════════════════════════════════════════════════════════════════
+#         # ════════════════════════════════════════════════════════════════════
+#         # RIGHT PANEL
+#         # ════════════════════════════════════════════════════════════════════
 
-        # ── R1: CARGO CONSIGNMENT NOTE header (grey bg) ──────────────────────
-        r_title = Table([[
-            P(copy_label, 7, bold=True, align=TA_CENTER),
-        ]], colWidths=[RP], rowHeights=[5*mm])
-        r_title.setStyle(TableStyle([
-            ('BOX',        (0,0),(-1,-1), 0.5, colors.black),
-            ('BACKGROUND', (0,0),(-1,-1), LGREY),
-            ('VALIGN',     (0,0),(-1,-1), 'MIDDLE'),
-            ('TOPPADDING', (0,0),(-1,-1), 1),
-            ('BOTTOMPADDING',(0,0),(-1,-1),1),
-        ]))
+#         # ── R1: CARGO CONSIGNMENT NOTE header (grey bg) ──────────────────────
+#         r_title = Table([[
+#             P(copy_label, 7, bold=True, align=TA_CENTER),
+#         ]], colWidths=[RP], rowHeights=[5*mm])
+#         r_title.setStyle(TableStyle([
+#             ('BOX',        (0,0),(-1,-1), 0.5, colors.black),
+#             ('BACKGROUND', (0,0),(-1,-1), LGREY),
+#             ('VALIGN',     (0,0),(-1,-1), 'MIDDLE'),
+#             ('TOPPADDING', (0,0),(-1,-1), 1),
+#             ('BOTTOMPADDING',(0,0),(-1,-1),1),
+#         ]))
 
-        # ── R2: SURFACE BOOKING | ORIGIN | DESTN (grey bg header) ───────────
-        # col widths inside RP=82mm: [42 | 22 | 18]
-        r_hdr = Table([[
-            P('', 7, bold=True, align=TA_CENTER),
-            P('ORIGIN',          7, bold=True, align=TA_CENTER),
-            P('DESTN',           7, bold=True, align=TA_CENTER),
-        ]], colWidths=[10*mm, 36*mm, 36*mm], rowHeights=[5*mm])
-        r_hdr.setStyle(TableStyle([
-            ('BOX',       (0,0),(-1,-1), 0.5, colors.black),
-            ('LINEAFTER', (0,0),(1,-1),  0.5, colors.black),
-            ('BACKGROUND',(0,0),(-1,-1), LGREY),
-            ('VALIGN',    (0,0),(-1,-1), 'MIDDLE'),
-            ('TOPPADDING',(0,0),(-1,-1), 1),
-            ('BOTTOMPADDING',(0,0),(-1,-1),1),
-        ]))
+#         # ── R2: SURFACE BOOKING | ORIGIN | DESTN (grey bg header) ───────────
+#         # col widths inside RP=82mm: [42 | 22 | 18]
+#         r_hdr = Table([[
+#             P('', 7, bold=True, align=TA_CENTER),
+#             P('ORIGIN',          7, bold=True, align=TA_CENTER),
+#             P('DESTN',           7, bold=True, align=TA_CENTER),
+#         ]], colWidths=[10*mm, 36*mm, 36*mm], rowHeights=[5*mm])
+#         r_hdr.setStyle(TableStyle([
+#             ('BOX',       (0,0),(-1,-1), 0.5, colors.black),
+#             ('LINEAFTER', (0,0),(1,-1),  0.5, colors.black),
+#             ('BACKGROUND',(0,0),(-1,-1), LGREY),
+#             ('VALIGN',    (0,0),(-1,-1), 'MIDDLE'),
+#             ('TOPPADDING',(0,0),(-1,-1), 1),
+#             ('BOTTOMPADDING',(0,0),(-1,-1),1),
+#         ]))
 
-        # ── R3: blank | ORIGIN city large | DESTN city ──────────────────────
-        r_cities = Table([[
-            P('Surface', 4),
-            P(f'<b>{org}</b>', 10, align=TA_CENTER),
-            P(f'<b>{dst}</b>', 10, align=TA_CENTER),
-        ]], colWidths=[10*mm, 36*mm, 36*mm], rowHeights=[8*mm])
-        r_cities.setStyle(TableStyle([
-            ('BOX',      (0,0),(-1,-1), 0.5, colors.black),
-            ('LINEAFTER',(0,0),(1,-1),  0.5, colors.black),
-            ('VALIGN',   (0,0),(-1,-1), 'MIDDLE'),
-            ('TOPPADDING',(0,0),(-1,-1),1),
-            ('BOTTOMPADDING',(0,0),(-1,-1),1),
-        ]))
+#         # ── R3: blank | ORIGIN city large | DESTN city ──────────────────────
+#         r_cities = Table([[
+#             P('Surface', 4),
+#             P(f'<b>{org}</b>', 10, align=TA_CENTER),
+#             P(f'<b>{dst}</b>', 10, align=TA_CENTER),
+#         ]], colWidths=[10*mm, 36*mm, 36*mm], rowHeights=[8*mm])
+#         r_cities.setStyle(TableStyle([
+#             ('BOX',      (0,0),(-1,-1), 0.5, colors.black),
+#             ('LINEAFTER',(0,0),(1,-1),  0.5, colors.black),
+#             ('VALIGN',   (0,0),(-1,-1), 'MIDDLE'),
+#             ('TOPPADDING',(0,0),(-1,-1),1),
+#             ('BOTTOMPADDING',(0,0),(-1,-1),1),
+#         ]))
 
-        # ── R4: CONSIGNEE label ──────────────────────────────────────────────
-        r_conslabel = Table([[
-            P('CONSIGNEE', 9 , bold=True, align=TA_CENTER),
-        ]], colWidths=[RP], rowHeights=[6*mm])
-        r_conslabel.setStyle(TableStyle([
-            ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
-            ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
-            ('LEFTPADDING',(0,0),(-1,-1), 2),
-            ('TOPPADDING', (0,0),(-1,-1), 1),
-            ('BOTTOMPADDING',(0,0),(-1,-1),1),
-        ]))
+#         # ── R4: CONSIGNEE label ──────────────────────────────────────────────
+#         r_conslabel = Table([[
+#             P('CONSIGNEE', 9 , bold=True, align=TA_CENTER),
+#         ]], colWidths=[RP], rowHeights=[6*mm])
+#         r_conslabel.setStyle(TableStyle([
+#             ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
+#             ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
+#             ('LEFTPADDING',(0,0),(-1,-1), 2),
+#             ('TOPPADDING', (0,0),(-1,-1), 1),
+#             ('BOTTOMPADDING',(0,0),(-1,-1),1),
+#         ]))
 
-        # ── R5: Consignee address blank writing area ─────────────────────────
-        r_consinfo = Table([[
-            Paragraph(
-                f'<b>{rn}</b><br/>{ra}' if rn else '',
-                style(11, leading=9.5, align=TA_CENTER)
-            ),
-        ]], colWidths=[RP], rowHeights=[24*mm])
-        r_consinfo.setStyle(TableStyle([
-            ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
-            ('VALIGN', (0,0),(-1,-1), 'TOP'),
-            ('TOPPADDING', (0,0),(-1,-1), 3),
-            ('LEFTPADDING',(0,0),(-1,-1), 3),
-        ]))
+#         # ── R5: Consignee address blank writing area ─────────────────────────
+#         r_consinfo = Table([[
+#             Paragraph(
+#                 f'<b>{rn}</b><br/>{ra}' if rn else '',
+#                 style(11, leading=9.5, align=TA_CENTER)
+#             ),
+#         ]], colWidths=[RP], rowHeights=[24*mm])
+#         r_consinfo.setStyle(TableStyle([
+#             ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
+#             ('VALIGN', (0,0),(-1,-1), 'TOP'),
+#             ('TOPPADDING', (0,0),(-1,-1), 3),
+#             ('LEFTPADDING',(0,0),(-1,-1), 3),
+#         ]))
 
-        # ── R6: Phone | Pincode ──────────────────────────────────────────────
-        r_phone = Table([[
-            P(f'Phone :{rp}',   7, align=TA_LEFT),
-            P(f'Pincode :', 7, align=TA_LEFT),
-        ]], colWidths=[RP*0.55, RP*0.45], rowHeights=[5*mm])
-        r_phone.setStyle(TableStyle([
-            # ('LINEBEFORE',  (0,0),(0,-1),  0, colors.black),
-            # ('LINEAFTER',   (-1,0),(-1,-1),0, colors.black),
-            # ('LINEBELOW',   (0,-1),(-1,-1),0, colors.black),
-            ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
-            ('LEFTPADDING',(0,0),(-1,-1), 3),
-            ('TOPPADDING', (0,0),(-1,-1), 1),
-            ('BOTTOMPADDING',(0,0),(-1,-1),1),
-        ]))
+#         # ── R6: Phone | Pincode ──────────────────────────────────────────────
+#         r_phone = Table([[
+#             P(f'Phone :{rp}',   7, align=TA_LEFT),
+#             P(f'Pincode :', 7, align=TA_LEFT),
+#         ]], colWidths=[RP*0.55, RP*0.45], rowHeights=[5*mm])
+#         r_phone.setStyle(TableStyle([
+#             # ('LINEBEFORE',  (0,0),(0,-1),  0, colors.black),
+#             # ('LINEAFTER',   (-1,0),(-1,-1),0, colors.black),
+#             # ('LINEBELOW',   (0,-1),(-1,-1),0, colors.black),
+#             ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
+#             ('LEFTPADDING',(0,0),(-1,-1), 3),
+#             ('TOPPADDING', (0,0),(-1,-1), 1),
+#             ('BOTTOMPADDING',(0,0),(-1,-1),1),
+#         ]))
 
-        # ── R7: Terms text (small italic) ────────────────────────────────────
-        # r_terms = Table([[
-        #     Paragraph(
-        #         '',
-        #         style(4.5, leading=6, align=TA_LEFT)
-        #     ),
-        # ]], colWidths=[RP], rowHeights=[9*mm])
-        # r_terms.setStyle(TableStyle([
-        #     ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
-        #     ('VALIGN', (0,0),(-1,-1), 'TOP'),
-        #     ('TOPPADDING', (0,0),(-1,-1), 2),
-        #     ('LEFTPADDING',(0,0),(-1,-1), 2),
-        # ]))
+#         # ── R7: Terms text (small italic) ────────────────────────────────────
+#         # r_terms = Table([[
+#         #     Paragraph(
+#         #         '',
+#         #         style(4.5, leading=6, align=TA_LEFT)
+#         #     ),
+#         # ]], colWidths=[RP], rowHeights=[9*mm])
+#         # r_terms.setStyle(TableStyle([
+#         #     ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
+#         #     ('VALIGN', (0,0),(-1,-1), 'TOP'),
+#         #     ('TOPPADDING', (0,0),(-1,-1), 2),
+#         #     ('LEFTPADDING',(0,0),(-1,-1), 2),
+#         # ]))
 
-        # ── R8: Declared Value | Contents | No Pieces | Weight (grey header) ─
-        cw8 = [RP*0.27, RP*0.27, RP*0.23, RP*0.23]
-        r_sumhdr = Table([[
-            P('Declared Value', 6, bold=True, align=TA_CENTER),
-            P('Contents',       6, bold=True, align=TA_CENTER),
-            P('No Pieces',      6, bold=True, align=TA_CENTER),
-            P('Weight',         6, bold=True, align=TA_CENTER),
-        ]], colWidths=cw8, rowHeights=[5*mm])
-        r_sumhdr.setStyle(TableStyle([
-            ('BOX',        (0,0),(-1,-1), 0.5, colors.black),
-            ('INNERGRID',  (0,0),(-1,-1), 0.5, colors.black),
-            ('BACKGROUND', (0,0),(-1,-1), LGREY),
-            ('VALIGN',     (0,0),(-1,-1), 'MIDDLE'),
-            ('TOPPADDING', (0,0),(-1,-1), 1),
-            ('BOTTOMPADDING',(0,0),(-1,-1),1),
-        ]))
+#         # ── R8: Declared Value | Contents | No Pieces | Weight (grey header) ─
+#         cw8 = [RP*0.27, RP*0.27, RP*0.23, RP*0.23]
+#         r_sumhdr = Table([[
+#             P('Declared Value', 6, bold=True, align=TA_CENTER),
+#             P('Contents',       6, bold=True, align=TA_CENTER),
+#             P('No Pieces',      6, bold=True, align=TA_CENTER),
+#             P('Weight',         6, bold=True, align=TA_CENTER),
+#         ]], colWidths=cw8, rowHeights=[5*mm])
+#         r_sumhdr.setStyle(TableStyle([
+#             ('BOX',        (0,0),(-1,-1), 0.5, colors.black),
+#             ('INNERGRID',  (0,0),(-1,-1), 0.5, colors.black),
+#             ('BACKGROUND', (0,0),(-1,-1), LGREY),
+#             ('VALIGN',     (0,0),(-1,-1), 'MIDDLE'),
+#             ('TOPPADDING', (0,0),(-1,-1), 1),
+#             ('BOTTOMPADDING',(0,0),(-1,-1),1),
+#         ]))
 
-        # ── R9: Summary values ───────────────────────────────────────────────
-        r_sumval = Table([[
-            P(amt,  7, align=TA_CENTER),
-            P(cont, 7, align=TA_CENTER),
-            P(pcs,  7, align=TA_CENTER),
-            P(f'{wt} kg', 7, align=TA_CENTER),
-        ]], colWidths=cw8, rowHeights=[6*mm])
-        r_sumval.setStyle(TableStyle([
-            ('BOX',       (0,0),(-1,-1), 0.5, colors.black),
-            ('INNERGRID', (0,0),(-1,-1), 0.5, colors.black),
-            ('VALIGN',    (0,0),(-1,-1), 'MIDDLE'),
-            ('TOPPADDING',(0,0),(-1,-1), 1),
-            ('BOTTOMPADDING',(0,0),(-1,-1),1),
-        ]))
+#         # ── R9: Summary values ───────────────────────────────────────────────
+#         r_sumval = Table([[
+#             P(amt,  7, align=TA_CENTER),
+#             P(cont, 7, align=TA_CENTER),
+#             P(pcs,  7, align=TA_CENTER),
+#             P(f'{wt} kg', 7, align=TA_CENTER),
+#         ]], colWidths=cw8, rowHeights=[6*mm])
+#         r_sumval.setStyle(TableStyle([
+#             ('BOX',       (0,0),(-1,-1), 0.5, colors.black),
+#             ('INNERGRID', (0,0),(-1,-1), 0.5, colors.black),
+#             ('VALIGN',    (0,0),(-1,-1), 'MIDDLE'),
+#             ('TOPPADDING',(0,0),(-1,-1), 1),
+#             ('BOTTOMPADDING',(0,0),(-1,-1),1),
+#         ]))
 
-        # ── R10: Self Cheques prohibited (grey) ──────────────────────────────
-        r_prohib = Table([[
-            P('Self Cheques, Jewellery, Cell Phones & Cash is Strictly Prohibited',
-              6, bold=True, align=TA_CENTER),
-        ]], colWidths=[RP], rowHeights=[5*mm])
-        r_prohib.setStyle(TableStyle([
-            ('BOX',        (0,0),(-1,-1), 0.5, colors.black),
-            ('BACKGROUND', (0,0),(-1,-1), LGREY),
-            ('VALIGN',     (0,0),(-1,-1), 'MIDDLE'),
-            ('TOPPADDING', (0,0),(-1,-1), 1),
-            ('BOTTOMPADDING',(0,0),(-1,-1),1),
-        ]))
+#         # ── R10: Self Cheques prohibited (grey) ──────────────────────────────
+#         r_prohib = Table([[
+#             P('Self Cheques, Jewellery, Cell Phones & Cash is Strictly Prohibited',
+#               6, bold=True, align=TA_CENTER),
+#         ]], colWidths=[RP], rowHeights=[5*mm])
+#         r_prohib.setStyle(TableStyle([
+#             ('BOX',        (0,0),(-1,-1), 0.5, colors.black),
+#             ('BACKGROUND', (0,0),(-1,-1), LGREY),
+#             ('VALIGN',     (0,0),(-1,-1), 'MIDDLE'),
+#             ('TOPPADDING', (0,0),(-1,-1), 1),
+#             ('BOTTOMPADDING',(0,0),(-1,-1),1),
+#         ]))
 
-        # ── R11: THANKS FOR UTILISING OUR SERVICES ───────────────────────────
-        r_thanks = Table([[
-            P('Signature', 6, bold=True, align=TA_CENTER),
-        ]], colWidths=[RP], rowHeights=[5*mm])
-        r_thanks.setStyle(TableStyle([
-            ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
-            ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
-            ('TOPPADDING',(0,0),(-1,-1),1),
-            ('BOTTOMPADDING',(0,0),(-1,-1),1),
-        ]))
+#         # ── R11: THANKS FOR UTILISING OUR SERVICES ───────────────────────────
+#         r_thanks = Table([[
+#             P('Signature', 6, bold=True, align=TA_CENTER),
+#         ]], colWidths=[RP], rowHeights=[5*mm])
+#         r_thanks.setStyle(TableStyle([
+#             ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
+#             ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
+#             ('TOPPADDING',(0,0),(-1,-1),1),
+#     elements = []
+#     for i, label in enumerate(['SHIPPER COPY', 'POD COPY', 'OFFICE COPY']):
+#         elements.append(make_slip(label))
+#         if i < 2:
+#             elements.append(Spacer(1, 10*mm))
 
-        # ── R12: SHIPPER COPY large ───────────────────────────────────────────
-        r_copy = Table([[
-            P('', 14, bold=True, align=TA_CENTER),
-        ]], colWidths=[RP], rowHeights=[10*mm])
-        r_copy.setStyle(TableStyle([
-            ('BOX',    (0,0),(-1,-1), 0.5, colors.black),
-            ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
-            ('TOPPADDING',(0,0),(-1,-1),1),
-            ('BOTTOMPADDING',(0,0),(-1,-1),1),
-        ]))
-
-        right = Table([
-            [r_title],
-            [r_hdr],
-            [r_cities],
-            [r_conslabel],
-            [r_consinfo],
-            [r_phone],
-            # [r_terms],
-            [r_sumhdr],
-            [r_sumval],
-            [r_prohib],
-            [r_thanks],
-            [r_copy],
-        ], colWidths=[RP])
-        right.setStyle(TableStyle([
-            ('TOPPADDING',   (0,0),(-1,-1), 0),
-            ('BOTTOMPADDING',(0,0),(-1,-1), 0),
-            ('LEFTPADDING',  (0,0),(-1,-1), 0),
-            ('RIGHTPADDING', (0,0),(-1,-1), 0),
-        ]))
-
-        # ── Combine into full slip ────────────────────────────────────────────
-        slip = Table([[left, right]], colWidths=[LP, RP])
-        slip.setStyle(TableStyle([
-            ('BOX',     (0,0),(-1,-1), 1.0, colors.black),
-            ('VALIGN',  (0,0),(-1,-1), 'TOP'),
-            ('LINEAFTER',(0,0),(0,0),  1.0, colors.black),
-            ('TOPPADDING',   (0,0),(-1,-1), 0),
-            ('BOTTOMPADDING',(0,0),(-1,-1), 0),
-            ('LEFTPADDING',  (0,0),(-1,-1), 0),
-            ('RIGHTPADDING', (0,0),(-1,-1), 0),
-        ]))
-
-        return slip
-
-    elements = []
-    for i, label in enumerate(['SHIPPER COPY', 'POD COPY', 'OFFICE COPY']):
-        elements.append(make_slip(label))
-        if i < 2:
-            elements.append(Spacer(1, 10*mm))
-
-    doc.build(elements)
-    buffer.seek(0)
-    return buffer.read()
+#     doc.build(elements)
+#     buffer.seek(0)
+#     return buffer.read()
 
 
 def get_booking_data(awb_number):
@@ -1196,14 +1166,17 @@ def get_booking_data(awb_number):
             dest_name = BranchDetails.objects.get(branch_code=dest_code).branchname
         elif UserDetails.objects.filter(code=dest_code).exists():
             dest_name = UserDetails.objects.get(code=dest_code).code_name
+        
+        branch_name_address = ""
+        branch_phone = ""
         if HubDetails.objects.filter(hub_code=origin_code).exists():
             h = HubDetails.objects.get(hub_code=origin_code)
             branch_name_address = h.address
+            branch_phone = h.phone_number
         elif BranchDetails.objects.filter(branch_code=origin_code).exists():
             b = BranchDetails.objects.get(branch_code=origin_code)
             branch_name_address = b.address
-        # elif UserDetails.objects.filter(code=origin_code).exists():
-        #     branch_name_address = UserDetails.objects.get(code=origin_code).code_name
+            branch_phone = b.phone_number
 
         return {
             'awb_number':       booking.awbno,
@@ -1222,9 +1195,306 @@ def get_booking_data(awb_number):
             'contents':         booking.contents,
             'amount':           getattr(booking, 'amount', ''),
             'booked_branch_address': branch_name_address,
+            'booked_branch_phone': branch_phone,
         }
     except Exception as e:
         print(f"Error: {e}")
         return None
 
 
+from io import BytesIO
+import datetime
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import mm
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.graphics.barcode import code128
+
+def generate_booking_pdf(input1):
+    input3 = BytesIO()
+
+    # A4 portrait usable width: 210mm - 8mm - 8mm = 194mm
+    W  = 194 * mm
+    CP = 6 * mm
+    LP = (W - CP) / 2.0  
+    RP = (W - CP) / 2.0  
+
+    # Brand color matching the physical copy
+    FDC_GREEN = colors.HexColor("#008A4A")
+
+    doc = SimpleDocTemplate(
+        input3, pagesize=A4,
+        topMargin=5*mm, bottomMargin=5*mm,
+        leftMargin=8*mm, rightMargin=8*mm,
+    )
+
+    # Core data mapping
+    input2 = input1.get('awb_number', '')  # AWB & Barcode
+    org  = input1.get('origin_name', '').upper()
+    dst  = input1.get('destination_name', '').upper()
+    sn   = input1.get('sender_name', '')
+    sa   = input1.get('sender_address', '')
+    sp   = input1.get('sender_phone', '')
+    rn   = input1.get('receiver_name', '')
+    ra   = input1.get('receiver_address', '')
+    rp   = input1.get('receiver_phone', '')
+    dt   = input1.get('date', '')
+    tm   = input1.get('time', '')
+    pcs  = str(input1.get('pieces', ''))
+    wt   = str(input1.get('weight', ''))
+    cont = str(input1.get('contents', ''))
+    amt  = str(input1.get('amount', ''))
+    bookingbranch = input1.get('booked_branch_address', '')
+    bookingphone = input1.get('booked_branch_phone', '')
+
+    # Typography helpers
+    def style(size, leading=None, align=TA_LEFT, color=FDC_GREEN):
+        if leading is None:
+            leading = size * 1.2
+        return ParagraphStyle(name=f's_{size}_{align}', fontSize=size, leading=leading, alignment=align, textColor=color)
+
+    def P(text, size, bold=False, align=TA_LEFT, color=FDC_GREEN):
+        if bold:
+            text = f"<b>{text}</b>"
+        return Paragraph(text, style(size, align=align, color=color))
+
+    def make_slip(copy_label):
+
+        # ════════════════════════════════════════════════════════════════════
+        # LEFT PANEL
+        # ════════════════════════════════════════════════════════════════════
+
+        # ── L1: Branding row ────────────────────────────────────────────────
+        brand = Table([[
+            P('✈', 16, bold=True, align=TA_CENTER),
+            Paragraph(
+                '<b><font size=12 color="#008A4A">FDC COURIER &amp; CARGO</font></b><br/>'
+                '<font size=7 color="#008A4A">(LOCAL &amp; DOMESTIC CARGO SERVICES)</font><br/>',
+                style(8, leading=10, align=TA_LEFT)
+            ),
+        ]], colWidths=[12*mm, LP-12*mm], rowHeights=[15*mm])
+        brand.setStyle(TableStyle([
+            ('LINEAFTER',    (0,0),(0,0), 0.5, FDC_GREEN),
+            ('VALIGN',       (0,0),(-1,-1), 'MIDDLE'),
+            ('TOPPADDING',   (0,0),(-1,-1), 1),
+            ('BOTTOMPADDING',(0,0),(-1,-1), 1),
+            ('LEFTPADDING',  (0,0),(-1,-1), 2),
+            ('RIGHTPADDING', (0,0),(-1,-1), 2),
+        ]))
+
+        # ── L2: CONSIGNOR label ─────────────────────────────────────────────
+        consignor_label = Table([[
+            P('CONSIGNOR', 9, bold=True, align=TA_CENTER),
+        ]], colWidths=[LP], rowHeights=[5*mm])
+        consignor_label.setStyle(TableStyle([
+            ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
+            ('TOPPADDING',   (0,0),(-1,-1), 1),
+            ('BOTTOMPADDING',(0,0),(-1,-1), 1),
+        ]))
+
+        # ── L3: Consignor address ───────────────────────────────────────────
+        consignor_info = Table([[
+            Paragraph(
+                f'<b><font color="black">{sn}</font></b><br/><font color="black">{sa}</font><br/><font color="black">Phone: {sp}</font>' if sn else '',
+                style(9, leading=11, align=TA_CENTER)
+            ),
+        ]], colWidths=[LP], rowHeights=[16*mm])
+        consignor_info.setStyle(TableStyle([
+            ('VALIGN', (0,0),(-1,-1), 'TOP'),
+            ('TOPPADDING', (0,0),(-1,-1), 2),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 2),
+            ('LEFTPADDING', (0,0),(-1,-1), 4),
+            ('RIGHTPADDING', (0,0),(-1,-1), 4),
+        ]))
+
+        # ── L4: Barcode (Dynamic via ReportLab) ─────────────────────────────
+        bc_flowable = code128.Code128(input2, barWidth=1.2, barHeight=9*mm) if input2 else P('NO AWB', 10)
+        bc = Table([
+            [bc_flowable],
+            [P(f'* {input2} *', 11, bold=True, align=TA_CENTER, color=colors.black)],
+        ], colWidths=[LP], rowHeights=[12*mm, 5*mm])
+        bc.setStyle(TableStyle([
+            ('ALIGN',    (0,0),(-1,-1), 'CENTER'),
+            ('VALIGN',   (0,0),(-1,-1), 'MIDDLE'),
+            ('TOPPADDING',   (0,0),(-1,-1), 1),
+            ('BOTTOMPADDING',(0,0),(-1,-1), 1),
+        ]))
+
+        # ── L5: Footer ──────────────────────────────────────────────────────
+        # Col widths summing to LP (94mm) without the empty leftmost signature column
+        fc = [23*mm, 14*mm, 23*mm, 17*mm, 17*mm] 
+
+        footer = Table([
+            [P('Date', 6, bold=True, align=TA_CENTER), P('Time', 6, bold=True, align=TA_CENTER), P('Amount Rs.', 6, bold=True, align=TA_CENTER), P('', 6), P('', 6)],
+            [P(dt, 6, align=TA_CENTER, color=colors.black), P(tm, 6, align=TA_CENTER, color=colors.black), P('GST', 6, bold=True, align=TA_CENTER), P('', 7), P('', 7)],
+            [P('Recd By', 6, bold=True, align=TA_CENTER), '', P('Total Rs.', 6, bold=True, align=TA_CENTER), P('', 6), P('', 6)],
+            [P('FDC', 7, bold=True, align=TA_CENTER), '', P('PAY MODE', 7, bold=True, align=TA_CENTER), P('[  ] CASH', 6.5, bold=True, align=TA_CENTER), P('[  ] CREDIT', 6.5, bold=True, align=TA_CENTER)],
+        ], colWidths=fc, rowHeights=[4.75*mm, 4.75*mm, 4.75*mm, 4.75*mm])
+        
+        footer.setStyle(TableStyle([
+            ('LINEAFTER',    (0,0),(0,-1),  0.5, FDC_GREEN),
+            ('LINEAFTER',    (1,0),(1,-1),  0.5, FDC_GREEN),
+            ('LINEAFTER',    (2,0),(2,-1),  0.5, FDC_GREEN),
+            ('LINEAFTER',    (3,0),(3,-1),  0.5, FDC_GREEN),
+            ('LINEBELOW',    (0,0),(4,2),   0.5, FDC_GREEN),
+            ('SPAN', (0,2),(1,2)),
+            ('SPAN', (0,3),(1,3)),
+            ('VALIGN',       (0,0),(-1,-1), 'MIDDLE'),
+            ('ALIGN',        (0,0),(-1,-1), 'CENTER'),
+            ('TOPPADDING',   (0,0),(-1,-1), 1),
+            ('BOTTOMPADDING',(0,0),(-1,-1), 1),
+            ('LEFTPADDING',  (0,0),(-1,-1), 1),
+            ('RIGHTPADDING', (0,0),(-1,-1), 1),
+        ]))
+
+        left = Table([[brand], [consignor_label], [consignor_info], [bc], [footer]], colWidths=[LP], rowHeights=[15*mm, 5*mm, 16*mm, 17*mm, 19*mm])
+        left.setStyle(TableStyle([
+            ('LINEBELOW', (0,0),(-1,-2), 0.5, FDC_GREEN),
+            ('TOPPADDING', (0,0),(-1,-1), 0),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 0),
+            ('LEFTPADDING', (0,0),(-1,-1), 0),
+            ('RIGHTPADDING', (0,0),(-1,-1), 0),
+        ]))
+
+
+        # ════════════════════════════════════════════════════════════════════
+        # RIGHT PANEL
+        # ════════════════════════════════════════════════════════════════════
+
+        # Row 0: Booking Header & Cities (15mm total)
+        r_hdr_cities = Table([
+            [
+                P('BOOKED BRANCH', 6, bold=True, align=TA_CENTER),
+                P('ORIGIN', 7, bold=True, align=TA_CENTER),
+                P('DESTN', 7, bold=True, align=TA_CENTER)
+            ],
+            [
+                Paragraph(f"{bookingbranch}<br/>Phone: {bookingphone}" if bookingphone else bookingbranch, style(5, leading=6, align=TA_CENTER, color=colors.black)),
+                P(f'<b>{org}</b>', 10, align=TA_CENTER, color=colors.black),
+                P(f'<b>{dst}</b>', 10, align=TA_CENTER, color=colors.black)
+            ]
+        ], colWidths=[RP*0.28, RP*0.36, RP*0.36], rowHeights=[5*mm, 10*mm])
+        r_hdr_cities.setStyle(TableStyle([
+            ('LINEBELOW', (0,0), (-1,0), 0.5, FDC_GREEN),
+            ('INNERGRID', (0,0), (-1,-1), 0.5, FDC_GREEN),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('TOPPADDING', (0,0), (-1,-1), 1),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 1),
+            ('LEFTPADDING', (0,0), (-1,-1), 1),
+            ('RIGHTPADDING', (0,0), (-1,-1), 1),
+        ]))
+
+        # Row 1: Consignee Label (5mm)
+        r_conslabel = Table([[P('CONSIGNEE', 9, bold=True, align=TA_CENTER)]], colWidths=[RP], rowHeights=[5*mm])
+        r_conslabel.setStyle(TableStyle([
+            ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
+            ('TOPPADDING', (0,0),(-1,-1), 1),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 1),
+        ]))
+
+        # Row 2: Consignee Address, Phone, Pincode Info (16mm)
+        r_consinfo = Table([[
+            Paragraph(f'<b><font color="black">{rn}</font></b><br/><font color="black">{ra}</font><br/><font color="black">Phone: {rp} | Pincode: </font>' if rn else '', style(9, leading=11, align=TA_CENTER))
+        ]], colWidths=[RP], rowHeights=[16*mm])
+        r_consinfo.setStyle(TableStyle([
+            ('VALIGN', (0,0),(-1,-1), 'TOP'), 
+            ('TOPPADDING', (0,0),(-1,-1), 2),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 2),
+            ('LEFTPADDING', (0,0),(-1,-1), 4),
+            ('RIGHTPADDING', (0,0),(-1,-1), 4),
+        ]))
+
+        # Row 3: Summary Details (17mm total)
+        # cw8 column widths: Declared Value decreased to 18%, Contents increased to 36%
+        cw8 = [RP*0.18, RP*0.36, RP*0.23, RP*0.23]
+        r_sum = Table([
+            [
+                P('Declared Value', 6, bold=True, align=TA_CENTER),
+                P('Contents', 6, bold=True, align=TA_CENTER),
+                P('No Pieces', 6, bold=True, align=TA_CENTER),
+                P('Weight', 6, bold=True, align=TA_CENTER)
+            ],
+            [
+                P(amt, 8, align=TA_CENTER, color=colors.black),
+                P(cont, 8, align=TA_CENTER, color=colors.black),
+                P(pcs, 8, align=TA_CENTER, color=colors.black),
+                P(f'{wt} kg' if wt else '', 8, align=TA_CENTER, color=colors.black)
+            ]
+        ], colWidths=cw8, rowHeights=[7*mm, 10*mm])
+        r_sum.setStyle(TableStyle([
+            ('LINEBELOW', (0,0), (-1,0), 0.5, FDC_GREEN),
+            ('INNERGRID', (0,0), (-1,-1), 0.5, FDC_GREEN),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('TOPPADDING', (0,0), (-1,-1), 1),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 1),
+            ('LEFTPADDING', (0,0), (-1,-1), 1),
+            ('RIGHTPADDING', (0,0), (-1,-1), 1),
+        ]))
+
+        # Row 4: Prohibited Warning & Signatures (19mm total)
+        # Warning text size decreased to size=5, added consignment status, aligned signature to bottom and borders to left
+        r_prohib_thanks = Table([
+            [P('Self Cheques, Jewellery, Cell Phones & Cash is Strictly Prohibited', 5, bold=True, align=TA_CENTER)],
+            [P('CONSIGNMENT RECEIVED IN GOOD CONDITION', 6, bold=True, align=TA_CENTER)],
+            [P('Signature', 6, bold=True, align=TA_CENTER)]
+        ], colWidths=[RP], rowHeights=[4.75*mm, 7.25*mm, 7.0*mm])
+        r_prohib_thanks.setStyle(TableStyle([
+            ('LINEBELOW', (0,0), (0,0), 0.5, FDC_GREEN),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('VALIGN', (0,2), (0,2), 'BOTTOM'),
+            ('TOPPADDING', (0,0), (-1,-1), 1),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 1),
+            ('BOTTOMPADDING', (0,2), (0,2), 2),
+            ('LEFTPADDING', (0,0), (-1,-1), 1),
+            ('RIGHTPADDING', (0,0), (-1,-1), 1),
+        ]))
+
+        right = Table([
+            [r_hdr_cities], [r_conslabel], [r_consinfo], [r_sum], [r_prohib_thanks]
+        ], colWidths=[RP], rowHeights=[15*mm, 5*mm, 16*mm, 17*mm, 19*mm])
+        right.setStyle(TableStyle([
+            ('LINEBELOW', (0,0),(-1,-2), 0.5, FDC_GREEN),
+            ('TOPPADDING', (0,0),(-1,-1), 0),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 0),
+            ('LEFTPADDING', (0,0),(-1,-1), 0),
+            ('RIGHTPADDING', (0,0),(-1,-1), 0),
+        ]))
+
+        # ── Combine Left and Right ──────────────────────────────────────────
+        # ── Combine Left, Right and Copy Label ──────────────────────────────
+        lbl_style = ParagraphStyle(
+            name=f'lbl_{copy_label.replace(" ", "_")}',
+            fontSize=5.5,
+            leading=7,
+            alignment=TA_CENTER,
+            textColor=FDC_GREEN,
+            fontName='Helvetica-Bold'
+        )
+        vertical_label = RotatedText(copy_label, lbl_style)
+
+        slip = Table([[left, right, vertical_label]], colWidths=[LP, RP, CP])
+        slip.setStyle(TableStyle([
+            ('BOX', (0,0),(-1,-1), 1.5, FDC_GREEN),
+            ('INNERGRID', (0,0),(-1,-1), 1.0, FDC_GREEN),
+            ('VALIGN', (0,0),(1,0), 'TOP'),
+            ('VALIGN', (2,0),(2,0), 'MIDDLE'),
+            ('ALIGN', (2,0),(2,0), 'CENTER'),
+            ('TOPPADDING', (0,0),(-1,-1), 0),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 0),
+            ('LEFTPADDING', (0,0),(-1,-1), 0),
+            ('RIGHTPADDING', (0,0),(-1,-1), 0),
+        ]))
+        return slip
+
+    # Build 3 vertical copies with spacers
+    elements = []
+    for i, label in enumerate(['SHIPPER COPY', 'POD COPY', 'OFFICE COPY']):
+        elements.append(make_slip(label))
+        if i < 2:
+            elements.append(Spacer(1, 4*mm))
+
+    doc.build(elements)
+    input3.seek(0)
+    return input3.read()
