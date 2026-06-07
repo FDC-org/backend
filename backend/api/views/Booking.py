@@ -114,9 +114,9 @@ class Booking(APIView):
                 pcs_int = int(pcs) if pcs else 0
             except (ValueError, TypeError):
                 pcs_int = 0
-            child_num = int(child_piece[-5:])
             if pcs_int > 1:
                 try:
+                    child_num = int(child_piece[-5:])
                     for i in range(pcs_int - 1):
                         if ChildPieceDetails.objects.filter(child_no=child_piece[:-5]+str(child_num + i)).exists():
                             return Response({"status":"child exists"})
