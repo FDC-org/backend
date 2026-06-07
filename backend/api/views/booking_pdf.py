@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 import io
 from django.http import FileResponse
-from ..utils.pdf_generator import get_booking_data, generate_booking_pdf
+from ..utils.pdf_generator import get_booking_data, generate_booking_pdf, generate_cargo_booking_pdf
 
 @api_view(['GET'])
 def download_booking_pdf(request, awb):
@@ -21,7 +21,11 @@ def download_booking_pdf(request, awb):
             )
             
         # Generate PDF
-        pdf_buffer = generate_booking_pdf(booking_data)
+        template_type = request.GET.get('type', 'parcel')
+        if template_type == 'cargo':
+            pdf_buffer = generate_cargo_booking_pdf(booking_data)
+        else:
+            pdf_buffer = generate_booking_pdf(booking_data)
         
         if not pdf_buffer:
             return Response(

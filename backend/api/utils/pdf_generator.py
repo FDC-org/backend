@@ -1498,3 +1498,571 @@ def generate_booking_pdf(input1):
     doc.build(elements)
     input3.seek(0)
     return input3.read()
+
+
+def generate_cargo_booking_pdf(input1):
+    from reportlab.platypus import PageBreak
+    input3 = BytesIO()
+
+    # A4 portrait usable width: 210mm - 8mm - 8mm = 194mm
+    # A4 portrait usable height: 297mm - 6mm - 6mm = 285mm
+    # We fit 2 copies in a single page: each is 128mm tall, with a 9mm Spacer in between them.
+    # Page layout columns:
+    # Column 0: Left vertical margin text -> 6*mm
+    # Column 1: Main Form Table -> 182*mm
+    # Column 2: Right vertical margin text -> 6*mm
+    # Total width = 194*mm
+    
+    doc = SimpleDocTemplate(
+        input3, pagesize=A4,
+        topMargin=6*mm, bottomMargin=6*mm,
+        leftMargin=8*mm, rightMargin=8*mm,
+    )
+
+    # Core data mapping
+    awb_code = input1.get('awb_number', '')  # AWB & Barcode
+    org  = input1.get('origin_name', '').upper()
+    dst  = input1.get('destination_name', '').upper()
+    sn   = input1.get('sender_name', '')
+    sa   = input1.get('sender_address', '')
+    sp   = input1.get('sender_phone', '')
+    rn   = input1.get('receiver_name', '')
+    ra   = input1.get('receiver_address', '')
+    rp   = input1.get('receiver_phone', '')
+    dt   = input1.get('date', '')
+    tm   = input1.get('time', '')
+    pcs  = str(input1.get('pieces', ''))
+    wt   = str(input1.get('weight', ''))
+    cont = str(input1.get('contents', ''))
+    amt  = str(input1.get('amount', ''))
+    bookingbranch = input1.get('booked_branch_address', '')
+    bookingphone = input1.get('booked_branch_phone', '')
+    mode = input1.get('mode', 'ROAD')
+    ref_no = input1.get('reference_no', '')
+
+    # Brand color matching the physical copy (green or HexColor("#008A4A"))
+    FDC_GREEN = colors.HexColor("#008A4A")
+
+    # Typography helpers
+    def style(size, leading=None, align=TA_LEFT, color=FDC_GREEN, bold=False):
+        if leading is None:
+            leading = size * 1.2
+        return ParagraphStyle(
+            name=f'c_{size}_{align}_{bold}_{color.hexval()}',
+            fontSize=size,
+            leading=leading,
+            alignment=align,
+            textColor=color,
+            fontName='Helvetica-Bold' if bold else 'Helvetica'
+        )
+
+    def P(text, size, bold=False, align=TA_LEFT, color=FDC_GREEN, leading=None):
+        return Paragraph(text, style(size, leading=leading, align=align, color=color, bold=bold))
+
+    # Construct the form_table layout (width 182mm)
+    # ── 1. Header (15mm height)
+    pay_trans = Table([
+        [P('Payment Mode', 5.5, bold=True, align=TA_CENTER, color=FDC_GREEN), P('Transport Mode', 5.5, bold=True, align=TA_CENTER, color=FDC_GREEN)],
+        [P('CREDIT', 8, bold=True, align=TA_CENTER, color=colors.black), P(mode.upper(), 8, bold=True, align=TA_CENTER, color=colors.black)]
+    ], colWidths=[22.5*mm, 22.5*mm], rowHeights=[6*mm, 9*mm])
+    pay_trans.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 1.0, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BACKGROUND', (0,0), (1,0), colors.HexColor('#dce2f9')),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    middle_header = Table([
+        [P('FDC COURIER & CARGO', 12, bold=True, align=TA_CENTER, color=FDC_GREEN)],
+        [P('(LOCAL & DOMESTIC CARGO SERVICES)', 5.5, bold=True, align=TA_CENTER, color=FDC_GREEN)]
+    ], colWidths=[67*mm], rowHeights=[8*mm, 7*mm])
+    middle_header.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    barcode_flowable = code128.Code128(awb_code, barWidth=1.0, barHeight=6*mm) if awb_code else P('NO AWB', 10)
+    
+    barcode_box = Table([
+        [P(awb_code, 9.5, bold=True, align=TA_CENTER, color=colors.black)],
+        [barcode_flowable],
+        [P(f'SHIPPING DATE : {dt}', 5.5, bold=True, align=TA_RIGHT, color=colors.black)]
+    ], colWidths=[70*mm], rowHeights=[5*mm, 6.5*mm, 3.5*mm])
+    barcode_box.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 1.0, colors.black),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING', (0,0), (-1,-1), 5),
+        ('RIGHTPADDING', (0,0), (-1,-1), 5),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    header_row = Table([
+        [pay_trans, middle_header, barcode_box]
+    ], colWidths=[45*mm, 67*mm, 70*mm], rowHeights=[15*mm])
+    header_row.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    # ── 2. Origin/Destination (7mm height)
+    origin_dest_row = Table([
+        [
+            P('ORIGIN', 6.5, bold=True, align=TA_CENTER, color=FDC_GREEN),
+            P(org, 8, bold=True, align=TA_CENTER, color=colors.black),
+            P('DESTINATION', 6.5, bold=True, align=TA_CENTER, color=FDC_GREEN),
+            P(dst, 8, bold=True, align=TA_CENTER, color=colors.black)
+        ]
+    ], colWidths=[18*mm, 73*mm, 25*mm, 66*mm], rowHeights=[7*mm])
+    origin_dest_row.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 1.0, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BACKGROUND', (0,0), (0,0), colors.HexColor('#dce2f9')),
+        ('BACKGROUND', (2,0), (2,0), colors.HexColor('#dce2f9')),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    # ── 3. Addresses block (21mm height)
+    bookingphone_str = f" | Phone: {bookingphone}" if bookingphone else ""
+    booked_branch_text = f"<b><font color='{FDC_GREEN.hexval()}'>BOOKED BRANCH:</font> {org}</b><br/>{bookingbranch}{bookingphone_str}"
+    sender_text = f"<b><font color='{FDC_GREEN.hexval()}'>SENDER:</font> {sn}</b><br/>{sa}<br/>Phone: {sp}"
+    ship_to_text = f"<b><font color='{FDC_GREEN.hexval()}'>SHIP TO:</font> {rn}</b><br/>{ra}<br/>Phone: {rp}"
+
+    address_row = Table([
+        [
+            Paragraph(booked_branch_text, style(6.5, leading=8.5, color=colors.black)),
+            Paragraph(sender_text, style(6.5, leading=8.5, color=colors.black)),
+            Paragraph(ship_to_text, style(6.5, leading=8.5, color=colors.black))
+        ]
+    ], colWidths=[60*mm, 61*mm, 61*mm], rowHeights=[21*mm])
+    address_row.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 1.0, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('LEFTPADDING', (0,0), (-1,-1), 4),
+        ('RIGHTPADDING', (0,0), (-1,-1), 4),
+    ]))
+
+    # ── 4. Main Grid (52mm height total)
+    # Left part (Columns 1, 2, 3) -> 110mm wide
+    left_headers = Table([
+        [
+            P('METHOD OF PACKING', 6, bold=True, align=TA_CENTER, color=FDC_GREEN),
+            P('DESCRIPTION (SAID TO CONTAIN)', 6, bold=True, align=TA_CENTER, color=FDC_GREEN),
+            P('VOLUME (CMS \ Inches)', 6, bold=True, align=TA_CENTER, color=FDC_GREEN)
+        ]
+    ], colWidths=[30*mm, 45*mm, 35*mm], rowHeights=[7*mm])
+    left_headers.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#dce2f9')),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    left_vals = Table([
+        [
+            P('', 7), 
+            P(cont, 7.5, align=TA_CENTER, color=colors.black), 
+            P('', 7)
+        ]
+    ], colWidths=[30*mm, 45*mm, 35*mm], rowHeights=[13*mm])
+    left_vals.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    left_mid_headers = Table([
+        [
+            P('INVOICE NO. & DATE', 6, bold=True, align=TA_CENTER, color=FDC_GREEN),
+            P('E-WAYBILL NO', 6, bold=True, align=TA_CENTER, color=FDC_GREEN),
+            P("AT OWNER'S RISK / CARRIER'S RISK", 6, bold=True, align=TA_CENTER, color=FDC_GREEN)
+        ]
+    ], colWidths=[30*mm, 45*mm, 35*mm], rowHeights=[5*mm])
+    left_mid_headers.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#dce2f9')),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    risk_text = f"<font size=4 color='{FDC_GREEN.hexval()}'>If insured, Details of Insurance Policy</font><br/><font size=4.5 color='black'>POLICY NO: ___________ DATE: ______<br/>INSURANCE CO: _____________________<br/>INSURED VALUE: ____________________</font>"
+    left_mid_vals = Table([
+        [
+            P(ref_no, 7.5, align=TA_CENTER, color=colors.black), 
+            P('', 7), 
+            Paragraph(risk_text, style(4.5, leading=6, color=colors.black))
+        ]
+    ], colWidths=[30*mm, 45*mm, 35*mm], rowHeights=[12*mm])
+    left_mid_vals.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('VALIGN', (2,0), (2,0), 'TOP'),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (2,0), (2,0), 1),
+    ]))
+
+    val_declared_box = Table([
+        [P('VALUE DECLARED (Rs.)', 5.5, bold=True, align=TA_CENTER, color=FDC_GREEN)],
+        [P(amt or '0.00', 9, bold=True, align=TA_CENTER, color=colors.black)]
+    ], colWidths=[30*mm], rowHeights=[5*mm, 10*mm])
+    val_declared_box.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BACKGROUND', (0,0), (0,0), colors.HexColor('#dce2f9')),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    add_services_content = Table([
+        [
+            P('CREDIT CUSTOMER', 5.5, align=TA_LEFT, color=colors.black),
+            P('DACC [  ]<br/>COD  [  ]<br/>DOD  [  ]', 5.5, align=TA_LEFT, color=colors.black),
+            P('TOPAY AMT:<br/>MR NO.:<br/>DATE:', 5.5, leading=7, align=TA_LEFT, color=colors.black)
+        ]
+    ], colWidths=[28*mm, 22*mm, 30*mm], rowHeights=[10*mm])
+    add_services_content.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('LEFTPADDING', (0,0), (-1,-1), 2),
+    ]))
+
+    add_services_box = Table([
+        [P('ADD. SERVICES', 5.5, bold=True, align=TA_CENTER, color=FDC_GREEN)],
+        [add_services_content]
+    ], colWidths=[80*mm], rowHeights=[5*mm, 10*mm])
+    add_services_box.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BACKGROUND', (0,0), (0,0), colors.HexColor('#dce2f9')),
+        ('LEFTPADDING', (0,1), (-1,1), 0),
+        ('RIGHTPADDING', (0,1), (-1,1), 0),
+        ('TOPPADDING', (0,1), (-1,1), 0),
+        ('BOTTOMPADDING', (0,1), (-1,1), 0),
+    ]))
+
+    left_bottom_row = Table([
+        [val_declared_box, add_services_box]
+    ], colWidths=[30*mm, 80*mm], rowHeights=[15*mm])
+    left_bottom_row.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    left_part = Table([
+        [left_headers],
+        [left_vals],
+        [left_mid_headers],
+        [left_mid_vals],
+        [left_bottom_row]
+    ], colWidths=[110*mm], rowHeights=[7*mm, 13*mm, 5*mm, 12*mm, 15*mm])
+    left_part.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    # Right part (Pieces, Weight, Charges, Freight) -> 72mm wide
+    pieces_wt_table = Table([
+        [P('NO. OF PIECES', 5, bold=True, align=TA_CENTER, color=FDC_GREEN)],
+        [P(pcs or '0', 8, bold=True, align=TA_CENTER, color=colors.black)],
+        [P('ACTUAL WEIGHT', 5, bold=True, align=TA_CENTER, color=FDC_GREEN)],
+        [P(wt or '0.000', 8, bold=True, align=TA_CENTER, color=colors.black)],
+        [P('CHARGED WEIGHT', 5, bold=True, align=TA_CENTER, color=FDC_GREEN)],
+        [P(wt or '0.000', 8, bold=True, align=TA_CENTER, color=colors.black)]
+    ], colWidths=[18*mm], rowHeights=[7*mm, 8.5*mm, 5*mm, 8.5*mm, 5*mm, 9*mm])
+    pieces_wt_table.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BACKGROUND', (0,0), (0,0), colors.HexColor('#dce2f9')),
+        ('BACKGROUND', (0,2), (0,2), colors.HexColor('#dce2f9')),
+        ('BACKGROUND', (0,4), (0,4), colors.HexColor('#dce2f9')),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    charges_list = [
+        'FREIGHT',
+        'TO PAY CHARGES',
+        'RISK CHARGE',
+        'D/C',
+        'DOD/COD CHARGES',
+        'HANDLING CHARGES',
+        'OSC',
+        'FUEL SURCHARGE',
+        'TOTAL',
+        'GRAND TOTAL'
+    ]
+
+    charges_rows = []
+    charges_rows.append([
+        P('CHARGES', 5.5, bold=True, align=TA_CENTER, color=FDC_GREEN),
+        P('FREIGHT', 5.5, bold=True, align=TA_CENTER, color=FDC_GREEN)
+    ])
+
+    for charge in charges_list:
+        val_str = ''
+        if charge in ['FREIGHT', 'TOTAL', 'GRAND TOTAL'] and amt:
+            val_str = amt
+        
+        charges_rows.append([
+            P(charge, 4.5, bold=(charge in ['TOTAL', 'GRAND TOTAL']), align=TA_LEFT, color=colors.black),
+            P(val_str, 6.5, bold=(charge in ['TOTAL', 'GRAND TOTAL']), align=TA_RIGHT, color=colors.black)
+        ])
+
+    row_heights = [7*mm] + [3.6*mm] * len(charges_list)
+    charges_table = Table(charges_rows, colWidths=[36*mm, 18*mm], rowHeights=row_heights)
+    charges_table.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BACKGROUND', (0,0), (1,0), colors.HexColor('#dce2f9')),
+        ('RIGHTPADDING', (1,1), (1,-1), 2),
+        ('LEFTPADDING', (0,1), (0,-1), 2),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    upper_block = Table([
+        [pieces_wt_table, charges_table]
+    ], colWidths=[18*mm, 54*mm], rowHeights=[43*mm])
+    upper_block.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    gstin_row = Table([
+        [
+            P('GSTIN paid by', 5.5, bold=True, align=TA_CENTER, color=FDC_GREEN),
+            P('[ ] Cnr', 5, bold=True, align=TA_CENTER, color=colors.black),
+            P('[ ] Cee', 5, bold=True, align=TA_CENTER, color=colors.black),
+            P('[ ] Tpr', 5, bold=True, align=TA_CENTER, color=colors.black)
+        ]
+    ], colWidths=[22*mm, 16*mm, 16*mm, 18*mm], rowHeights=[9*mm])
+    gstin_row.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BACKGROUND', (0,0), (0,0), colors.HexColor('#dce2f9')),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    right_part = Table([
+        [upper_block],
+        [gstin_row]
+    ], colWidths=[72*mm], rowHeights=[43*mm, 9*mm])
+    right_part.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    # Combine Left and Right into wrapper_table
+    wrapper_table = Table([
+        [left_part, right_part]
+    ], colWidths=[110*mm, 72*mm], rowHeights=[52*mm])
+    wrapper_table.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 1.0, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    # ── 5. Footer (32mm height total)
+    left_footer = Table([
+        [P('RECEIVED ABOVE SHIPMENT IN ORDER AND GOOD CONDITION', 5, bold=True, align=TA_CENTER, color=FDC_GREEN), ''],
+        [P('EMP ID.', 5.5, bold=True, color=FDC_GREEN), P('SIGN & STAMP', 5.5, bold=True, color=FDC_GREEN)],
+        [P('', 5), P('', 5)],
+        [P('NAME:', 5.5, bold=True, color=FDC_GREEN), P('', 5)],
+        [P('PHONE:', 5.5, bold=True, color=FDC_GREEN), P('', 5)]
+    ], colWidths=[28*mm, 47*mm], rowHeights=[5*mm, 5*mm, 5*mm, 8.5*mm, 8.5*mm])
+    left_footer.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('SPAN', (0,0), (1,0)),
+        ('BACKGROUND', (0,0), (1,0), colors.HexColor('#dce2f9')),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('VALIGN', (0,1), (-1,2), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 3),
+        ('RIGHTPADDING', (0,0), (-1,-1), 3),
+        ('TOPPADDING', (0,0), (-1,-1), 1),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 1),
+    ]))
+
+    spec_inst_box = Table([
+        [P('[  ] LIABILITY LIMITED TO RS 1000/- ONLY.', 5.5, color=colors.black)],
+        [P("[  ] WE CARRY UNDER CARRIER'S ACT", 5.5, color=colors.black)]
+    ], colWidths=[35*mm], rowHeights=[13.5*mm, 13.5*mm])
+    spec_inst_box.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING', (0,0), (-1,-1), 2),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    middle_footer = Table([
+        [P('SPECIAL INSTRUCTIONS', 5.5, bold=True, align=TA_CENTER, color=FDC_GREEN)],
+        [spec_inst_box]
+    ], colWidths=[35*mm], rowHeights=[5*mm, 27*mm])
+    middle_footer.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BACKGROUND', (0,0), (0,0), colors.HexColor('#dce2f9')),
+        ('LEFTPADDING', (0,1), (-1,1), 0),
+        ('RIGHTPADDING', (0,1), (-1,1), 0),
+        ('TOPPADDING', (0,1), (-1,1), 0),
+        ('BOTTOMPADDING', (0,1), (-1,1), 0),
+    ]))
+
+    terms_para = Paragraph(
+        "I/we hereby agree to terms setout on reverse and declare contents are true and correct, to-pay Freight has our consent and will be paid by consignee at delivery.",
+        style(4.2, leading=5, color=colors.black)
+    )
+    
+    consignor_sign = Table([
+        [P("CONSIGNOR'S SIGN", 5.5, align=TA_RIGHT, color=colors.black)],
+        [P("NAME:", 5.5, align=TA_LEFT, color=colors.black)]
+    ], colWidths=[72*mm], rowHeights=[5.5*mm, 5.5*mm])
+    consignor_sign.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING', (0,0), (-1,-1), 3),
+        ('RIGHTPADDING', (0,0), (-1,-1), 3),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    incharge_date = Table([
+        [P("BOOKING INCHARGE", 5.5, bold=True, color=colors.black), P("DATE & TIME:", 5.5, bold=True, color=colors.black)]
+    ], colWidths=[36*mm, 36*mm], rowHeights=[10*mm])
+    incharge_date.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING', (0,0), (-1,-1), 3),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    right_footer = Table([
+        [terms_para],
+        [consignor_sign],
+        [incharge_date]
+    ], colWidths=[72*mm], rowHeights=[11*mm, 11*mm, 10*mm])
+    right_footer.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('TOPPADDING', (0,0), (-1,0), 1),
+        ('BOTTOMPADDING', (0,0), (-1,0), 1),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    footer_row = Table([
+        [left_footer, middle_footer, right_footer]
+    ], colWidths=[75*mm, 35*mm, 72*mm], rowHeights=[32*mm])
+    footer_row.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    # Assembling the main form (182mm wide, 128mm tall)
+    form_table = Table([
+        [header_row],
+        [origin_dest_row],
+        [address_row],
+        [wrapper_table],
+        [Spacer(1, 1*mm)],
+        [footer_row]
+    ], colWidths=[182*mm])
+    form_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    def make_page(copy_label):
+        left_margin_text = ""
+        
+        right_lbl_style = ParagraphStyle(
+            name=f'right_lbl_{copy_label.replace(" ", "_")}',
+            fontSize=6,
+            leading=7.5,
+            alignment=TA_CENTER,
+            textColor=FDC_GREEN,
+            fontName='Helvetica-Bold'
+        )
+        right_margin_text = RotatedText(copy_label, right_lbl_style)
+        
+        page_table = Table([
+            [left_margin_text, form_table, right_margin_text]
+        ], colWidths=[6*mm, 182*mm, 6*mm], rowHeights=[128*mm])
+        page_table.setStyle(TableStyle([
+            ('BOX', (0,0),(-1,-1), 1.5, FDC_GREEN),
+            ('INNERGRID', (0,0),(-1,-1), 1.0, FDC_GREEN),
+            ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
+            ('ALIGN', (0,0),(-1,-1), 'CENTER'),
+            ('LEFTPADDING', (0,0),(-1,-1), 0),
+            ('RIGHTPADDING', (0,0),(-1,-1), 0),
+            ('TOPPADDING', (0,0),(-1,-1), 0),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 0),
+        ]))
+        return page_table
+
+    elements = []
+    # Generate 2 copies on a single portrait page with a 9mm Spacer
+    elements.append(make_page('CONSIGNOR COPY'))
+    elements.append(Spacer(1, 9*mm))
+    elements.append(make_page('CONSIGNEE COPY'))
+
+    doc.build(elements)
+    input3.seek(0)
+    return input3.read()
