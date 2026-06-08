@@ -11,7 +11,7 @@ import datetime
 from decimal import Decimal
 
 from api.models import BookingDetails, UserDetails
-from api.utils.pdf_generator import generate_booking_pdf, get_booking_data
+from api.utils.pdf_generator import generate_booking_pdf, generate_cargo_booking_pdf, get_booking_data
 from api.views.booking_pdf import download_booking_pdf
 
 def test_booking_pdf():
@@ -51,30 +51,50 @@ def test_booking_pdf():
         print("Failed to retrieve data")
         return
 
-    # Test PDF Generation
+    # Test PDF Generation (Parcel)
     try:
         pdf_bytes = generate_booking_pdf(data)
         if pdf_bytes and len(pdf_bytes) > 0:
-            print(f"PDF generated successfully. Size: {len(pdf_bytes)} bytes")
-            # Save to file for manual inspection
-            with open("test_booking.pdf", "wb") as f:
+            print(f"Parcel PDF generated successfully. Size: {len(pdf_bytes)} bytes")
+            with open("test_booking_parcel.pdf", "wb") as f:
                 f.write(pdf_bytes)
-            print("Saved to test_booking.pdf")
+            print("Saved to test_booking_parcel.pdf")
         else:
-            print("PDF generation failed (empty)")
+            print("Parcel PDF generation failed (empty)")
     except Exception as e:
-        print(f"PDF generation error: {e}")
+        print(f"Parcel PDF generation error: {e}")
 
-    # Test API Endpoint (Mock request)
+    # Test PDF Generation (Cargo)
+    try:
+        pdf_bytes_cargo = generate_cargo_booking_pdf(data)
+        if pdf_bytes_cargo and len(pdf_bytes_cargo) > 0:
+            print(f"Cargo PDF generated successfully. Size: {len(pdf_bytes_cargo)} bytes")
+            with open("test_booking_cargo.pdf", "wb") as f:
+                f.write(pdf_bytes_cargo)
+            print("Saved to test_booking_cargo.pdf")
+        else:
+            print("Cargo PDF generation failed (empty)")
+    except Exception as e:
+        print(f"Cargo PDF generation error: {e}")
+
+    # Test API Endpoint - Parcel
     factory = RequestFactory()
-    request = factory.get(f'/api/booking/pdf/{awb}/')
-    response = download_booking_pdf(request, awb=awb)
+    request_parcel = factory.get(f'/api/booking/pdf/{awb}/?type=parcel')
+    response_parcel = download_booking_pdf(request_parcel, awb=awb)
     
-    if response.status_code == 200:
-        print("API Endpoint Test Passed (200 OK)")
-        print(f"Content-Type: {response['Content-Type']}")
+    if response_parcel.status_code == 200:
+        print("API Endpoint Test (Parcel) Passed (200 OK)")
     else:
-         print(f"API Endpoint Test Failed: {response.status_code}")
+        print(f"API Endpoint Test (Parcel) Failed: {response_parcel.status_code}")
+
+    # Test API Endpoint - Cargo
+    request_cargo = factory.get(f'/api/booking/pdf/{awb}/?type=cargo')
+    response_cargo = download_booking_pdf(request_cargo, awb=awb)
+    
+    if response_cargo.status_code == 200:
+        print("API Endpoint Test (Cargo) Passed (200 OK)")
+    else:
+        print(f"API Endpoint Test (Cargo) Failed: {response_cargo.status_code}")
 
 if __name__ == "__main__":
     test_booking_pdf()
