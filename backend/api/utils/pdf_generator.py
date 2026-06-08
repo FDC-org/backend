@@ -1196,6 +1196,8 @@ def get_booking_data(awb_number):
             'amount':           getattr(booking, 'amount', ''),
             'booked_branch_address': branch_name_address,
             'booked_branch_phone': branch_phone,
+            'mode':             booking.mode or 'ROAD',
+            'reference_no':     booking.refernce_no or '',
         }
     except Exception as e:
         print(f"Error: {e}")
