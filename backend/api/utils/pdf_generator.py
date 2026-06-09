@@ -1198,6 +1198,10 @@ def get_booking_data(awb_number):
             'booked_branch_phone': branch_phone,
             'mode':             booking.mode or 'ROAD',
             'reference_no':     booking.refernce_no or '',
+            'eway_bill_no':     getattr(booking, 'eway_bill_no', ''),
+            'invoice_no':       getattr(booking, 'invoice_no', ''),
+            'invoice_date':     booking.invoice_date.strftime('%d-%m-%Y') if getattr(booking, 'invoice_date', None) else '',
+            'invoice_amount':   str(booking.invoice_amount) if getattr(booking, 'invoice_amount', None) is not None else '',
         }
     except Exception as e:
         print(f"Error: {e}")
@@ -1539,6 +1543,10 @@ def generate_cargo_booking_pdf(input1):
     amt  = str(input1.get('amount', ''))
     bookingbranch = input1.get('booked_branch_address', '')
     bookingphone = input1.get('booked_branch_phone', '')
+    eway_bill = input1.get('eway_bill_no', '')
+    inv_no = input1.get('invoice_no', '')
+    inv_date = input1.get('invoice_date', '')
+    inv_amt = input1.get('invoice_amount', '')
     mode = input1.get('mode', 'ROAD')
     ref_no = input1.get('reference_no', '')
 
@@ -1708,10 +1716,18 @@ def generate_cargo_booking_pdf(input1):
     ]))
 
     risk_text = f"<font size=4 color='{FDC_GREEN.hexval()}'>If insured, Details of Insurance Policy</font><br/><font size=4.5 color='black'>POLICY NO: ___________ DATE: ______<br/>INSURANCE CO: _____________________<br/>INSURED VALUE: ____________________</font>"
+    
+    # Display format for invoice and date, fallback to reference number
+    inv_display = inv_no
+    if inv_no and inv_date:
+        inv_display = f"{inv_no} / {inv_date}"
+    elif not inv_no:
+        inv_display = ref_no
+
     left_mid_vals = Table([
         [
-            P(ref_no, 7.5, align=TA_CENTER, color=colors.black), 
-            P('', 7), 
+            P(inv_display, 7.5, align=TA_CENTER, color=colors.black), 
+            P(eway_bill, 7.5, align=TA_CENTER, color=colors.black), 
             Paragraph(risk_text, style(4.5, leading=6, color=colors.black))
         ]
     ], colWidths=[30*mm, 45*mm, 35*mm], rowHeights=[12*mm])
@@ -1725,9 +1741,12 @@ def generate_cargo_booking_pdf(input1):
         ('TOPPADDING', (2,0), (2,0), 1),
     ]))
 
+    # Default value declared to invoice amount if provided, otherwise booking amount
+    val_display = inv_amt if inv_amt else (amt or '0.00')
+
     val_declared_box = Table([
         [P('VALUE DECLARED (Rs.)', 5.5, bold=True, align=TA_CENTER, color=FDC_GREEN)],
-        [P(amt or '0.00', 9, bold=True, align=TA_CENTER, color=colors.black)]
+        [P(val_display, 9, bold=True, align=TA_CENTER, color=colors.black)]
     ], colWidths=[30*mm], rowHeights=[5*mm, 10*mm])
     val_declared_box.setStyle(TableStyle([
         ('BOX', (0,0), (-1,-1), 0.5, colors.black),

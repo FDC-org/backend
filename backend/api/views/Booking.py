@@ -100,6 +100,18 @@ class Booking(APIView):
         pincode = request.data['pincode']
         reference_no = request.data['reference']
         child_piece = request.data['child_pieces_start']
+        
+        eway_bill_no = request.data.get('eway_bill_no', '')
+        invoice_no = request.data.get('invoice_no', '')
+        
+        invoice_date = request.data.get('invoice_date')
+        if not invoice_date:
+            invoice_date = None
+            
+        invoice_amount = request.data.get('invoice_amount')
+        if invoice_amount == '' or invoice_amount is None:
+            invoice_amount = None
+
         if BookingDetails.objects.filter(awbno=awbno).exists():
             return Response({"status":"exists"})
         try:
@@ -108,7 +120,9 @@ class Booking(APIView):
                                           recieveraddress=receiveraddress,senderphonenumber=senderphone,
                                           recieverphonenumber=receiverphone,doc_type=doc_type,
                                           destination_code=destination_code,mode=mode,date=date,
-                                          booked_code=booked_code,contents=contents,pincode=pincode,refernce_no=reference_no)
+                                          booked_code=booked_code,contents=contents,pincode=pincode,refernce_no=reference_no,
+                                          eway_bill_no=eway_bill_no, invoice_no=invoice_no,
+                                          invoice_date=invoice_date, invoice_amount=invoice_amount)
 
             try:
                 pcs_int = int(pcs) if pcs else 0
