@@ -152,6 +152,10 @@ class BookingDetails(models.Model):
     contents = models.TextField(blank=True)
     pincode = models.CharField(max_length=10,blank=True)
     refernce_no = models.CharField(max_length=20,default="")
+    eway_bill_no = models.CharField(max_length=50, blank=True, default="")
+    invoice_no = models.CharField(max_length=50, blank=True, default="")
+    invoice_date = models.DateField(null=True, blank=True)
+    invoice_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
 
 class ChildPieceDetails(models.Model):
     awbno = models.CharField(max_length=10)
