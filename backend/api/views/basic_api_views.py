@@ -327,6 +327,10 @@ class Track(APIView):
                         "reference": booking_details[0].refernce_no if hasattr(
                             booking_details[0], 'refernce_no'
                         ) else "",
+                        "eway_bill_no": getattr(booking_details[0], 'eway_bill_no', '') or '',
+                        "invoice_no": getattr(booking_details[0], 'invoice_no', '') or '',
+                        "invoice_date": booking_details[0].invoice_date.strftime('%Y-%m-%d') if getattr(booking_details[0], 'invoice_date', None) else '',
+                        "invoice_amount": str(booking_details[0].invoice_amount) if getattr(booking_details[0], 'invoice_amount', None) is not None else '',
                     },
                     "delivery_data": delivery_data,
                     "status": "success",
