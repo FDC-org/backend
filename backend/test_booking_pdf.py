@@ -42,7 +42,13 @@ def test_booking_pdf():
         invoice_no="INV-998877",
         invoice_date=datetime.date.today(),
         invoice_amount=Decimal("25000.00"),
-        refernce_no="REF-55"
+        refernce_no="REF-55",
+        courier_charges=Decimal("150.00"),
+        gst=Decimal("27.00"),
+        packing_charges=Decimal("10.00"),
+        freight_charges=Decimal("50.00"),
+        others=Decimal("5.00"),
+        total=Decimal("242.00")
     )
     print(f"Created dummy booking {awb} with E-Way Bill details")
 
