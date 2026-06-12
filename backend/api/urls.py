@@ -23,6 +23,7 @@ urlpatterns = [
     path('verify_token/', basic_api_views.VerifyToken.as_view()),
     path('track/<slug:awbno>', basic_api_views.Track.as_view()),
     path('get_boy_loc/',delivery.getDeliveryBoys_locations.as_view()),
+    path('clients/', basic_api_views.ClientsAPI.as_view()),
 
     # booking
 

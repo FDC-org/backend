@@ -156,10 +156,29 @@ class BookingDetails(models.Model):
     invoice_no = models.CharField(max_length=50, blank=True, default="")
     invoice_date = models.DateField(null=True, blank=True)
     invoice_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    booking_type = models.CharField(max_length=20, default="retail")
+    client_code = models.CharField(max_length=20, blank=True, default="")
+    courier_charges = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    gst = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    packing_charges = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    freight_charges = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    others = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
 class ChildPieceDetails(models.Model):
     awbno = models.CharField(max_length=10)
     child_no = models.CharField(max_length=10,unique=True)
+
+
+class Client(models.Model):
+    client_code = models.CharField(primary_key=True, max_length=20)
+    name = models.CharField(max_length=100)
+    address = models.TextField()
+    phone_number = models.CharField(max_length=10)
+    code = models.CharField(max_length=20)
+
+    def __str__(self):
+        return f"{self.name} ({self.client_code})"
 
 
 class AppRelease(models.Model):
@@ -276,3 +295,9 @@ class BookingTempAdmin(admin.ModelAdmin):
 class DeliveredOrDrsAdmin(admin.ModelAdmin):
     list_display = ('awbno',)
     search_fields = ('awbno',)
+
+
+@admin.register(Client)
+class ClientAdmin(admin.ModelAdmin):
+    list_display = ('client_code', 'name', 'phone_number', 'code')
+    search_fields = ('client_code', 'name', 'code')
