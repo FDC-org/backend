@@ -87,7 +87,7 @@ class DRSapi(APIView):
                         pdf_file = io.BytesIO(pdf_bytes)
                         upload_result = cloudinary.uploader.upload(
                             pdf_file,
-                            public_id=f"drs_{drs_num}",
+                            public_id=f"drs_{drs_num}.pdf",
                             resource_type="raw",
                         )
                         pdf_url = upload_result.get("secure_url")

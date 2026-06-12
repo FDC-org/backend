@@ -111,6 +111,24 @@ class Booking(APIView):
         invoice_amount = request.data.get('invoice_amount')
         if invoice_amount == '' or invoice_amount is None:
             invoice_amount = None
+            
+        booking_type = request.data.get('booking_type', 'retail')
+        client_code = request.data.get('client_code', '')
+
+        def clean_amount(val):
+            if val == "" or val is None:
+                return 0.00
+            try:
+                return float(val)
+            except (ValueError, TypeError):
+                return 0.00
+
+        courier_charges = clean_amount(request.data.get('courier_charges', 0.00))
+        gst = clean_amount(request.data.get('gst', 0.00))
+        packing_charges = clean_amount(request.data.get('packing_charges', 0.00))
+        freight_charges = clean_amount(request.data.get('freight_charges', 0.00))
+        others = clean_amount(request.data.get('others', 0.00))
+        total = clean_amount(request.data.get('total', 0.00))
 
         if BookingDetails.objects.filter(awbno=awbno).exists():
             return Response({"status":"exists"})
@@ -122,7 +140,11 @@ class Booking(APIView):
                                           destination_code=destination_code,mode=mode,date=date,
                                           booked_code=booked_code,contents=contents,pincode=pincode,refernce_no=reference_no,
                                           eway_bill_no=eway_bill_no, invoice_no=invoice_no,
-                                          invoice_date=invoice_date, invoice_amount=invoice_amount)
+                                          invoice_date=invoice_date, invoice_amount=invoice_amount,
+                                          booking_type=booking_type, client_code=client_code,
+                                          courier_charges=courier_charges, gst=gst,
+                                          packing_charges=packing_charges, freight_charges=freight_charges,
+                                          others=others, total=total)
 
             try:
                 pcs_int = int(pcs) if pcs else 0

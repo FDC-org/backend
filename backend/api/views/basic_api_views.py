@@ -17,7 +17,8 @@ from ..models import (
     DRS,
     DeliveryDetails,
     DrsDetails,
-CustomTokenModel,ChildPieceDetails
+CustomTokenModel,ChildPieceDetails,
+    Client
 )
 
 
@@ -435,3 +436,60 @@ class UserProfile(APIView):
                 "status": "error",
                 "message": "Failed to fetch profile"
             }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ClientsAPI(APIView):
+    def get(self, request):
+        try:
+            user_details = UserDetails.objects.get(user=request.user)
+            code = user_details.code
+            clients = Client.objects.filter(code=code)
+            data = []
+            for c in clients:
+                data.append({
+                    "client_code": c.client_code,
+                    "name": c.name,
+                    "address": c.address,
+                    "phone_number": c.phone_number
+                })
+            return Response({"status": "success", "data": data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request):
+        try:
+            user_details = UserDetails.objects.get(user=request.user)
+            code = user_details.code
+            name = request.data.get("name")
+            phone = request.data.get("phone")
+            address = request.data.get("address")
+            
+            if not name or not phone or not address:
+                return Response({"status": "error", "message": "All fields are required"}, status=status.HTTP_400_BAD_REQUEST)
+                
+            import random
+            client_code = f"C{random.randint(1,999999):06d}"
+            while Client.objects.filter(client_code=client_code).exists():
+                client_code = f"C{random.randint(1,999999):06d}"
+                
+            Client.objects.create(client_code=client_code, name=name, phone_number=phone, address=address, code=code)
+            return Response({"status": "success"}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print(e)
+            return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request):
+        try:
+            user_details = UserDetails.objects.get(user=request.user)
+            code = user_details.code
+            client_code = request.data.get("client_code")
+            
+            client = Client.objects.filter(client_code=client_code, code=code).first()
+            if client:
+                client.delete()
+                return Response({"status": "success"}, status=status.HTTP_200_OK)
+            return Response({"status": "error", "message": "Client not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            print(e)
+            return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)

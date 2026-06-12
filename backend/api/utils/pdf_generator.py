@@ -1193,7 +1193,13 @@ def get_booking_data(awb_number):
             'pieces':           booking.pcs,
             'weight':           booking.wt,
             'contents':         booking.contents,
-            'amount':           getattr(booking, 'amount', ''),
+            'amount':           str(booking.total) if getattr(booking, 'total', None) is not None else '0.00',
+            'courier_charges':  str(booking.courier_charges) if getattr(booking, 'courier_charges', None) is not None else '0.00',
+            'gst':              str(booking.gst) if getattr(booking, 'gst', None) is not None else '0.00',
+            'packing_charges':  str(booking.packing_charges) if getattr(booking, 'packing_charges', None) is not None else '0.00',
+            'freight_charges':  str(booking.freight_charges) if getattr(booking, 'freight_charges', None) is not None else '0.00',
+            'others':           str(booking.others) if getattr(booking, 'others', None) is not None else '0.00',
+            'total':            str(booking.total) if getattr(booking, 'total', None) is not None else '0.00',
             'booked_branch_address': branch_name_address,
             'booked_branch_phone': branch_phone,
             'mode':             booking.mode or 'ROAD',
@@ -1252,8 +1258,16 @@ def generate_booking_pdf(input1):
     wt   = str(input1.get('weight', ''))
     cont = str(input1.get('contents', ''))
     amt  = str(input1.get('amount', ''))
+    courier_charges = str(input1.get('courier_charges', '0.00'))
+    gst = str(input1.get('gst', '0.00'))
+    packing_charges = str(input1.get('packing_charges', '0.00'))
+    freight_charges = str(input1.get('freight_charges', '0.00'))
+    others = str(input1.get('others', '0.00'))
+    total = str(input1.get('total', '0.00'))
     bookingbranch = input1.get('booked_branch_address', '')
     bookingphone = input1.get('booked_branch_phone', '')
+    eway_bill = input1.get('eway_bill_no', '')
+    invoice_amount = input1.get('invoice_amount', '')
 
     # Typography helpers
     def style(size, leading=None, align=TA_LEFT, color=FDC_GREEN):
@@ -1333,9 +1347,9 @@ def generate_booking_pdf(input1):
         fc = [23*mm, 14*mm, 23*mm, 17*mm, 17*mm] 
 
         footer = Table([
-            [P('Date', 6, bold=True, align=TA_CENTER), P('Time', 6, bold=True, align=TA_CENTER), P('Amount Rs.', 6, bold=True, align=TA_CENTER), P('', 6), P('', 6)],
-            [P(dt, 6, align=TA_CENTER, color=colors.black), P(tm, 6, align=TA_CENTER, color=colors.black), P('GST', 6, bold=True, align=TA_CENTER), P('', 7), P('', 7)],
-            [P('Recd By', 6, bold=True, align=TA_CENTER), '', P('Total Rs.', 6, bold=True, align=TA_CENTER), P('', 6), P('', 6)],
+            [P('Date', 6, bold=True, align=TA_CENTER), P('Time', 6, bold=True, align=TA_CENTER), P('Amount Rs.', 6, bold=True, align=TA_CENTER), P(courier_charges, 6, align=TA_CENTER, color=colors.black), P('', 6)],
+            [P(dt, 6, align=TA_CENTER, color=colors.black), P(tm, 6, align=TA_CENTER, color=colors.black), P('GST', 6, bold=True, align=TA_CENTER), P(gst, 6, align=TA_CENTER, color=colors.black), P('', 7)],
+            [P('Recd By', 6, bold=True, align=TA_CENTER), '', P('Total Rs.', 6, bold=True, align=TA_CENTER), P(total, 6, align=TA_CENTER, color=colors.black), P('', 6)],
             [P('FDC', 7, bold=True, align=TA_CENTER), '', P('PAY MODE', 7, bold=True, align=TA_CENTER), P('[  ] CASH', 6.5, bold=True, align=TA_CENTER), P('[  ] CREDIT', 6.5, bold=True, align=TA_CENTER)],
         ], colWidths=fc, rowHeights=[4.75*mm, 4.75*mm, 4.75*mm, 4.75*mm])
         
@@ -1415,6 +1429,7 @@ def generate_booking_pdf(input1):
         # Row 3: Summary Details (17mm total)
         # cw8 column widths: Declared Value decreased to 18%, Contents increased to 36%
         cw8 = [RP*0.18, RP*0.36, RP*0.23, RP*0.23]
+        declared_val = invoice_amount if eway_bill else ""
         r_sum = Table([
             [
                 P('Declared Value', 6, bold=True, align=TA_CENTER),
@@ -1423,7 +1438,7 @@ def generate_booking_pdf(input1):
                 P('Weight', 6, bold=True, align=TA_CENTER)
             ],
             [
-                P(amt, 8, align=TA_CENTER, color=colors.black),
+                P(declared_val, 8, align=TA_CENTER, color=colors.black),
                 P(cont, 8, align=TA_CENTER, color=colors.black),
                 P(pcs, 8, align=TA_CENTER, color=colors.black),
                 P(f'{wt} kg' if wt else '', 8, align=TA_CENTER, color=colors.black)
@@ -1541,6 +1556,12 @@ def generate_cargo_booking_pdf(input1):
     wt   = str(input1.get('weight', ''))
     cont = str(input1.get('contents', ''))
     amt  = str(input1.get('amount', ''))
+    courier_charges = str(input1.get('courier_charges', '0.00'))
+    gst = str(input1.get('gst', '0.00'))
+    packing_charges = str(input1.get('packing_charges', '0.00'))
+    freight_charges = str(input1.get('freight_charges', '0.00'))
+    others = str(input1.get('others', '0.00'))
+    total = str(input1.get('total', '0.00'))
     bookingbranch = input1.get('booked_branch_address', '')
     bookingphone = input1.get('booked_branch_phone', '')
     eway_bill = input1.get('eway_bill_no', '')
@@ -1741,8 +1762,8 @@ def generate_cargo_booking_pdf(input1):
         ('TOPPADDING', (2,0), (2,0), 1),
     ]))
 
-    # Default value declared to invoice amount if provided, otherwise booking amount
-    val_display = inv_amt if inv_amt else (amt or '0.00')
+    # Default value declared to invoice amount if eway bill is added, otherwise blank
+    val_display = inv_amt if eway_bill else ""
 
     val_declared_box = Table([
         [P('VALUE DECLARED (Rs.)', 5.5, bold=True, align=TA_CENTER, color=FDC_GREEN)],
@@ -1833,14 +1854,14 @@ def generate_cargo_booking_pdf(input1):
     ]))
 
     charges_list = [
-        'FREIGHT',
+        'COURIER CHARGES',
+        'GST',
+        'PACKING CHARGES',
+        'FREIGHT CHARGES',
+        'OTHERS',
         'TO PAY CHARGES',
         'RISK CHARGE',
-        'D/C',
-        'DOD/COD CHARGES',
         'HANDLING CHARGES',
-        'OSC',
-        'FUEL SURCHARGE',
         'TOTAL',
         'GRAND TOTAL'
     ]
@@ -1848,13 +1869,21 @@ def generate_cargo_booking_pdf(input1):
     charges_rows = []
     charges_rows.append([
         P('CHARGES', 5.5, bold=True, align=TA_CENTER, color=FDC_GREEN),
-        P('FREIGHT', 5.5, bold=True, align=TA_CENTER, color=FDC_GREEN)
+        P('AMOUNT', 5.5, bold=True, align=TA_CENTER, color=FDC_GREEN)
     ])
 
+    charge_values = {
+        'COURIER CHARGES': courier_charges,
+        'GST': gst,
+        'PACKING CHARGES': packing_charges,
+        'FREIGHT CHARGES': freight_charges,
+        'OTHERS': others,
+        'TOTAL': total,
+        'GRAND TOTAL': total
+    }
+
     for charge in charges_list:
-        val_str = ''
-        if charge in ['FREIGHT', 'TOTAL', 'GRAND TOTAL'] and amt:
-            val_str = amt
+        val_str = charge_values.get(charge, '')
         
         charges_rows.append([
             P(charge, 4.5, bold=(charge in ['TOTAL', 'GRAND TOTAL']), align=TA_LEFT, color=colors.black),
