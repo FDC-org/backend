@@ -39,12 +39,12 @@ class BarcodeFlowable(Flowable):
 
 class RotatedText(Flowable):
     """Rotates a paragraph of text by 90 degrees."""
-    def __init__(self, text, style):
+    def __init__(self, text, style, height=130*mm):
         Flowable.__init__(self)
         self.text = text
         self.style = style
         self.p = Paragraph(self.text, self.style)
-        self.p.wrap(72*mm, 10*mm)
+        self.p.wrap(height, 10*mm)
         self.width = self.p.height
         self.height = self.p.width
 
@@ -1238,7 +1238,7 @@ def generate_booking_pdf(input1):
 
     doc = SimpleDocTemplate(
         input3, pagesize=A4,
-        topMargin=5*mm, bottomMargin=5*mm,
+        topMargin=8*mm, bottomMargin=8*mm,
         leftMargin=8*mm, rightMargin=8*mm,
     )
 
@@ -1294,12 +1294,12 @@ def generate_booking_pdf(input1):
                 '<font size=7 color="#008A4A">(LOCAL &amp; DOMESTIC CARGO SERVICES)</font><br/>',
                 style(8, leading=10, align=TA_LEFT)
             ),
-        ]], colWidths=[12*mm, LP-12*mm], rowHeights=[15*mm])
+        ]], colWidths=[12*mm, LP-12*mm], rowHeights=[17*mm])
         brand.setStyle(TableStyle([
             ('LINEAFTER',    (0,0),(0,0), 0.5, FDC_GREEN),
             ('VALIGN',       (0,0),(-1,-1), 'MIDDLE'),
-            ('TOPPADDING',   (0,0),(-1,-1), 1),
-            ('BOTTOMPADDING',(0,0),(-1,-1), 1),
+            ('TOPPADDING',   (0,0),(-1,-1), 2),
+            ('BOTTOMPADDING',(0,0),(-1,-1), 2),
             ('LEFTPADDING',  (0,0),(-1,-1), 2),
             ('RIGHTPADDING', (0,0),(-1,-1), 2),
         ]))
@@ -1310,8 +1310,8 @@ def generate_booking_pdf(input1):
         ]], colWidths=[LP], rowHeights=[5*mm])
         consignor_label.setStyle(TableStyle([
             ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
-            ('TOPPADDING',   (0,0),(-1,-1), 1),
-            ('BOTTOMPADDING',(0,0),(-1,-1), 1),
+            ('TOPPADDING',   (0,0),(-1,-1), 2),
+            ('BOTTOMPADDING',(0,0),(-1,-1), 2),
         ]))
 
         # ── L3: Consignor address ───────────────────────────────────────────
@@ -1320,26 +1320,26 @@ def generate_booking_pdf(input1):
                 f'<b><font color="black">{sn}</font></b><br/><font color="black">{sa}</font><br/><font color="black">Phone: {sp}</font>' if sn else '',
                 style(9, leading=11, align=TA_CENTER)
             ),
-        ]], colWidths=[LP], rowHeights=[16*mm])
+        ]], colWidths=[LP], rowHeights=[18*mm])
         consignor_info.setStyle(TableStyle([
-            ('VALIGN', (0,0),(-1,-1), 'TOP'),
-            ('TOPPADDING', (0,0),(-1,-1), 2),
-            ('BOTTOMPADDING', (0,0),(-1,-1), 2),
+            ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
+            ('TOPPADDING', (0,0),(-1,-1), 3),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 3),
             ('LEFTPADDING', (0,0),(-1,-1), 4),
             ('RIGHTPADDING', (0,0),(-1,-1), 4),
         ]))
 
         # ── L4: Barcode (Dynamic via ReportLab) ─────────────────────────────
-        bc_flowable = code128.Code128(input2, barWidth=1.2, barHeight=9*mm) if input2 else P('NO AWB', 10)
+        bc_flowable = code128.Code128(input2, barWidth=1.2, barHeight=9.5*mm) if input2 else P('NO AWB', 10)
         bc = Table([
             [bc_flowable],
             [P(f'* {input2} *', 11, bold=True, align=TA_CENTER, color=colors.black)],
-        ], colWidths=[LP], rowHeights=[12*mm, 5*mm])
+        ], colWidths=[LP], rowHeights=[13*mm, 6*mm])
         bc.setStyle(TableStyle([
             ('ALIGN',    (0,0),(-1,-1), 'CENTER'),
             ('VALIGN',   (0,0),(-1,-1), 'MIDDLE'),
-            ('TOPPADDING',   (0,0),(-1,-1), 1),
-            ('BOTTOMPADDING',(0,0),(-1,-1), 1),
+            ('TOPPADDING',   (0,0),(-1,-1), 2),
+            ('BOTTOMPADDING',(0,0),(-1,-1), 2),
         ]))
 
         # ── L5: Footer ──────────────────────────────────────────────────────
@@ -1351,7 +1351,7 @@ def generate_booking_pdf(input1):
             [P(dt, 6, align=TA_CENTER, color=colors.black), P(tm, 6, align=TA_CENTER, color=colors.black), P('GST', 6, bold=True, align=TA_CENTER), P(gst, 6, align=TA_CENTER, color=colors.black), P('', 7)],
             [P('Recd By', 6, bold=True, align=TA_CENTER), '', P('Total Rs.', 6, bold=True, align=TA_CENTER), P(total, 6, align=TA_CENTER, color=colors.black), P('', 6)],
             [P('FDC', 7, bold=True, align=TA_CENTER), '', P('PAY MODE', 7, bold=True, align=TA_CENTER), P('[  ] CASH', 6.5, bold=True, align=TA_CENTER), P('[  ] CREDIT', 6.5, bold=True, align=TA_CENTER)],
-        ], colWidths=fc, rowHeights=[4.75*mm, 4.75*mm, 4.75*mm, 4.75*mm])
+        ], colWidths=fc, rowHeights=[5.75*mm, 5.75*mm, 5.75*mm, 5.75*mm])
         
         footer.setStyle(TableStyle([
             ('LINEAFTER',    (0,0),(0,-1),  0.5, FDC_GREEN),
@@ -1363,13 +1363,13 @@ def generate_booking_pdf(input1):
             ('SPAN', (0,3),(1,3)),
             ('VALIGN',       (0,0),(-1,-1), 'MIDDLE'),
             ('ALIGN',        (0,0),(-1,-1), 'CENTER'),
-            ('TOPPADDING',   (0,0),(-1,-1), 1),
-            ('BOTTOMPADDING',(0,0),(-1,-1), 1),
+            ('TOPPADDING',   (0,0),(-1,-1), 1.5),
+            ('BOTTOMPADDING',(0,0),(-1,-1), 1.5),
             ('LEFTPADDING',  (0,0),(-1,-1), 1),
             ('RIGHTPADDING', (0,0),(-1,-1), 1),
         ]))
 
-        left = Table([[brand], [consignor_label], [consignor_info], [bc], [footer]], colWidths=[LP], rowHeights=[15*mm, 5*mm, 16*mm, 17*mm, 19*mm])
+        left = Table([[brand], [consignor_label], [consignor_info], [bc], [footer]], colWidths=[LP], rowHeights=[17*mm, 5*mm, 18*mm, 19*mm, 23*mm])
         left.setStyle(TableStyle([
             ('LINEBELOW', (0,0),(-1,-2), 0.5, FDC_GREEN),
             ('TOPPADDING', (0,0),(-1,-1), 0),
@@ -1383,25 +1383,25 @@ def generate_booking_pdf(input1):
         # RIGHT PANEL
         # ════════════════════════════════════════════════════════════════════
 
-        # Row 0: Booking Header & Cities (15mm total)
+        # Row 0: Booking Header & Cities (17mm total)
         r_hdr_cities = Table([
             [
-                P('BOOKED BRANCH', 6, bold=True, align=TA_CENTER),
-                P('ORIGIN', 7, bold=True, align=TA_CENTER),
-                P('DESTN', 7, bold=True, align=TA_CENTER)
+                P('BOOKED BRANCH', 7, bold=True, align=TA_CENTER),
+                P('ORIGIN', 6.5, bold=True, align=TA_CENTER),
+                P('DESTN', 6.5, bold=True, align=TA_CENTER)
             ],
             [
-                Paragraph(f"{bookingbranch}<br/>Phone: {bookingphone}" if bookingphone else bookingbranch, style(5, leading=6, align=TA_CENTER, color=colors.black)),
-                P(f'<b>{org}</b>', 10, align=TA_CENTER, color=colors.black),
-                P(f'<b>{dst}</b>', 10, align=TA_CENTER, color=colors.black)
+                Paragraph(f"{bookingbranch}<br/>Phone: {bookingphone}" if bookingphone else bookingbranch, style(7, leading=8.5, align=TA_CENTER, color=colors.black)),
+                P(f'<b>{org}</b>', 8, align=TA_CENTER, color=colors.black),
+                P(f'<b>{dst}</b>', 8, align=TA_CENTER, color=colors.black)
             ]
-        ], colWidths=[RP*0.28, RP*0.36, RP*0.36], rowHeights=[5*mm, 10*mm])
+        ], colWidths=[RP*0.36, RP*0.32, RP*0.32], rowHeights=[5.5*mm, 11.5*mm])
         r_hdr_cities.setStyle(TableStyle([
             ('LINEBELOW', (0,0), (-1,0), 0.5, FDC_GREEN),
             ('INNERGRID', (0,0), (-1,-1), 0.5, FDC_GREEN),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('TOPPADDING', (0,0), (-1,-1), 1),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 1),
+            ('TOPPADDING', (0,0), (-1,-1), 2),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 2),
             ('LEFTPADDING', (0,0), (-1,-1), 1),
             ('RIGHTPADDING', (0,0), (-1,-1), 1),
         ]))
@@ -1410,24 +1410,23 @@ def generate_booking_pdf(input1):
         r_conslabel = Table([[P('CONSIGNEE', 9, bold=True, align=TA_CENTER)]], colWidths=[RP], rowHeights=[5*mm])
         r_conslabel.setStyle(TableStyle([
             ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
-            ('TOPPADDING', (0,0),(-1,-1), 1),
-            ('BOTTOMPADDING', (0,0),(-1,-1), 1),
-        ]))
-
-        # Row 2: Consignee Address, Phone, Pincode Info (16mm)
-        r_consinfo = Table([[
-            Paragraph(f'<b><font color="black">{rn}</font></b><br/><font color="black">{ra}</font><br/><font color="black">Phone: {rp} | Pincode: </font>' if rn else '', style(9, leading=11, align=TA_CENTER))
-        ]], colWidths=[RP], rowHeights=[16*mm])
-        r_consinfo.setStyle(TableStyle([
-            ('VALIGN', (0,0),(-1,-1), 'TOP'), 
             ('TOPPADDING', (0,0),(-1,-1), 2),
             ('BOTTOMPADDING', (0,0),(-1,-1), 2),
+        ]))
+
+        # Row 2: Consignee Address, Phone, Pincode Info (18mm)
+        r_consinfo = Table([[
+            Paragraph(f'<b><font color="black">{rn}</font></b><br/><font color="black">{ra}</font><br/><font color="black">Phone: {rp} | Pincode: </font>' if rn else '', style(9, leading=11, align=TA_CENTER))
+        ]], colWidths=[RP], rowHeights=[18*mm])
+        r_consinfo.setStyle(TableStyle([
+            ('VALIGN', (0,0),(-1,-1), 'MIDDLE'), 
+            ('TOPPADDING', (0,0),(-1,-1), 3),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 3),
             ('LEFTPADDING', (0,0),(-1,-1), 4),
             ('RIGHTPADDING', (0,0),(-1,-1), 4),
         ]))
 
-        # Row 3: Summary Details (17mm total)
-        # cw8 column widths: Declared Value decreased to 18%, Contents increased to 36%
+        # Row 3: Summary Details (19mm total)
         cw8 = [RP*0.18, RP*0.36, RP*0.23, RP*0.23]
         declared_val = invoice_amount if eway_bill else ""
         r_sum = Table([
@@ -1443,30 +1442,29 @@ def generate_booking_pdf(input1):
                 P(pcs, 8, align=TA_CENTER, color=colors.black),
                 P(f'{wt} kg' if wt else '', 8, align=TA_CENTER, color=colors.black)
             ]
-        ], colWidths=cw8, rowHeights=[7*mm, 10*mm])
+        ], colWidths=cw8, rowHeights=[7.5*mm, 11.5*mm])
         r_sum.setStyle(TableStyle([
             ('LINEBELOW', (0,0), (-1,0), 0.5, FDC_GREEN),
             ('INNERGRID', (0,0), (-1,-1), 0.5, FDC_GREEN),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('TOPPADDING', (0,0), (-1,-1), 1),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 1),
+            ('TOPPADDING', (0,0), (-1,-1), 2),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 2),
             ('LEFTPADDING', (0,0), (-1,-1), 1),
             ('RIGHTPADDING', (0,0), (-1,-1), 1),
         ]))
 
-        # Row 4: Prohibited Warning & Signatures (19mm total)
-        # Warning text size decreased to size=5, added consignment status, aligned signature to bottom and borders to left
+        # Row 4: Prohibited Warning & Signatures (23mm total)
         r_prohib_thanks = Table([
             [P('Self Cheques, Jewellery, Cell Phones & Cash is Strictly Prohibited', 5, bold=True, align=TA_CENTER)],
             [P('CONSIGNMENT RECEIVED IN GOOD CONDITION', 6, bold=True, align=TA_CENTER)],
             [P('Signature', 6, bold=True, align=TA_CENTER)]
-        ], colWidths=[RP], rowHeights=[4.75*mm, 7.25*mm, 7.0*mm])
+        ], colWidths=[RP], rowHeights=[5.75*mm, 8.75*mm, 8.5*mm])
         r_prohib_thanks.setStyle(TableStyle([
             ('LINEBELOW', (0,0), (0,0), 0.5, FDC_GREEN),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ('VALIGN', (0,2), (0,2), 'BOTTOM'),
-            ('TOPPADDING', (0,0), (-1,-1), 1),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 1),
+            ('TOPPADDING', (0,0), (-1,-1), 2),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 2),
             ('BOTTOMPADDING', (0,2), (0,2), 2),
             ('LEFTPADDING', (0,0), (-1,-1), 1),
             ('RIGHTPADDING', (0,0), (-1,-1), 1),
@@ -1474,7 +1472,7 @@ def generate_booking_pdf(input1):
 
         right = Table([
             [r_hdr_cities], [r_conslabel], [r_consinfo], [r_sum], [r_prohib_thanks]
-        ], colWidths=[RP], rowHeights=[15*mm, 5*mm, 16*mm, 17*mm, 19*mm])
+        ], colWidths=[RP], rowHeights=[17*mm, 5*mm, 18*mm, 19*mm, 23*mm])
         right.setStyle(TableStyle([
             ('LINEBELOW', (0,0),(-1,-2), 0.5, FDC_GREEN),
             ('TOPPADDING', (0,0),(-1,-1), 0),
@@ -1483,17 +1481,16 @@ def generate_booking_pdf(input1):
             ('RIGHTPADDING', (0,0),(-1,-1), 0),
         ]))
 
-        # ── Combine Left and Right ──────────────────────────────────────────
         # ── Combine Left, Right and Copy Label ──────────────────────────────
         lbl_style = ParagraphStyle(
             name=f'lbl_{copy_label.replace(" ", "_")}',
-            fontSize=5.5,
-            leading=7,
+            fontSize=10,
+            leading=12,
             alignment=TA_CENTER,
             textColor=FDC_GREEN,
             fontName='Helvetica-Bold'
         )
-        vertical_label = RotatedText(copy_label, lbl_style)
+        vertical_label = RotatedText(copy_label, lbl_style, height=82*mm)
 
         slip = Table([[left, right, vertical_label]], colWidths=[LP, RP, CP])
         slip.setStyle(TableStyle([
@@ -1514,7 +1511,7 @@ def generate_booking_pdf(input1):
     for i, label in enumerate(['SHIPPER COPY', 'POD COPY', 'OFFICE COPY']):
         elements.append(make_slip(label))
         if i < 2:
-            elements.append(Spacer(1, 4*mm))
+            elements.append(Spacer(1, 6.0*mm))
 
     doc.build(elements)
     input3.seek(0)
@@ -1672,7 +1669,7 @@ def generate_cargo_booking_pdf(input1):
 
     address_row = Table([
         [
-            Paragraph(booked_branch_text, style(6.5, leading=8.5, color=colors.black)),
+            Paragraph(booked_branch_text, style(8.5, leading=11, color=colors.black)),
             Paragraph(sender_text, style(6.5, leading=8.5, color=colors.black)),
             Paragraph(ship_to_text, style(6.5, leading=8.5, color=colors.black))
         ]
@@ -2084,8 +2081,8 @@ def generate_cargo_booking_pdf(input1):
         
         right_lbl_style = ParagraphStyle(
             name=f'right_lbl_{copy_label.replace(" ", "_")}',
-            fontSize=6,
-            leading=7.5,
+            fontSize=10,
+            leading=12,
             alignment=TA_CENTER,
             textColor=FDC_GREEN,
             fontName='Helvetica-Bold'
