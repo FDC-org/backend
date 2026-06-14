@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 import datetime
 from decimal import Decimal
 
-from api.models import BookingDetails, UserDetails
+from api.models import BookingDetails, UserDetails, BranchDetails, HubDetails
 from api.utils.pdf_generator import generate_booking_pdf, generate_cargo_booking_pdf, get_booking_data
 from api.views.booking_pdf import download_booking_pdf
 
@@ -20,7 +20,29 @@ def test_booking_pdf():
     # thorough setup of dummy data
     awb = "LR_TEST_1"
     
-    # Recreate dummy booking each run to ensure new fields are populated
+    # Recreate dummy branch and booking each run
+    BranchDetails.objects.filter(branch_code="TEST_BR").delete()
+    BranchDetails.objects.create(
+        branch_code="TEST_BR",
+        location="TEST_LOCATION",
+        branchname="TEST BRANCH OFFICE",
+        address="123 Branch St, Branch City, State, 123456",
+        phone_number="9876543210",
+        hub="TEST_HUB",
+        incharge_name="Test Incharge"
+    )
+    
+    BranchDetails.objects.filter(branch_code="TEST_DE").delete()
+    BranchDetails.objects.create(
+        branch_code="TEST_DE",
+        location="TEST_DEST_LOCATION",
+        branchname="TEST DESTINATION OFFICE",
+        address="456 Dest St, Dest City, State, 654321",
+        phone_number="8765432109",
+        hub="TEST_HUB",
+        incharge_name="Dest Incharge"
+    )
+    
     BookingDetails.objects.filter(awbno=awb).delete()
     
     BookingDetails.objects.create(
@@ -32,8 +54,8 @@ def test_booking_pdf():
         recievername="Test Receiver",
         recieveraddress="456 Receiver Ave, Receiver City",
         recieverphonenumber="0987654321",
-        booked_code="TEST_BRANCH",
-        destination_code="TEST_DEST",
+        booked_code="TEST_BR",
+        destination_code="TEST_DE",
         pcs=5,
         wt=Decimal("10.5"),
         mode='Surface',
@@ -50,7 +72,7 @@ def test_booking_pdf():
         others=Decimal("5.00"),
         total=Decimal("242.00")
     )
-    print(f"Created dummy booking {awb} with E-Way Bill details")
+    print(f"Created dummy booking {awb} and branch details")
 
     # Test get_booking_data
     data = get_booking_data(awb)
